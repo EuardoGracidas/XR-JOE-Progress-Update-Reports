@@ -1,9 +1,9 @@
 # XR-JOE
 
 ## Members
-- PhD Oscar Meruvia-Pastor
-- PhD Jay Henderson
-- MsC Eduardo Gracidas-Reyes
+- Dr. Oscar Meruvia-Pastor
+- Dr. Jay Henderson
+- Eduardo Gracidas-Reyes
 
 ## Summary
 
