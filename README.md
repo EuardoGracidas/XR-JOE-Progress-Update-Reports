@@ -88,7 +88,13 @@ Every bi-weekly meeting gets its own notes file in the [`meetings`](meetings/) f
 2. Click the **pencil icon** (✏️) to edit.
 3. Make the changes and click **Commit changes**.
 
+However, avoid editing notes unless it is strictly necessary.
+
 ### Tips
 - Add each **action item** as a card on the Kanban board too, so it gets tracked until it's done.
 - At the start of the next meeting, open the previous notes and go through the action items.
 - Ticking a checkbox (`- [x]`) in the notes marks an action item as completed.
+
+## Disclaimer
+
+This repository as well as the project Kanban board is being automated using Claude with the constant supervision of Eduardo Gracidas-Reyes. 
