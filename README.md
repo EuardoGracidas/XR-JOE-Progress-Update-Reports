@@ -2,7 +2,7 @@
 
 ## Members
 - Dr. Oscar Meruvia-Pastor (supervisor)
-- Dr. Jay Henderson (supervisor)
+- Dr. Jay Henderson (co-supervisor)
 - MsC student Eduardo Gracidas-Reyes
 
 ## Summary
