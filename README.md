@@ -1,9 +1,9 @@
 # XR-JOE
 
 ## Members
-- Dr. Oscar Meruvia-Pastor
-- Dr. Jay Henderson
-- Eduardo Gracidas-Reyes
+- Dr. Oscar Meruvia-Pastor (supervisor)
+- Dr. Jay Henderson (supervisor)
+- MsC student Eduardo Gracidas-Reyes
 
 ## Summary
 
