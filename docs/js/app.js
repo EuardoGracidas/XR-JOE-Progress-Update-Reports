@@ -225,23 +225,97 @@ function renderHeader() {
     <button class="btn btn-ghost btn-sm" data-action="signout">${state.client.demo ? "Exit demo" : "Sign out"}</button>`;
 }
 
+// ---------------------------------------------------------------- GitHub OAuth (via Cloudflare Worker)
+const OAUTH_STATE_KEY = "xrjoe.oauthState";
+const RETURN_HASH_KEY = "xrjoe.returnHash";
+const oauthEnabled = () => !!(CONFIG.oauth && CONFIG.oauth.clientId && CONFIG.oauth.workerUrl);
+const redirectUri = () => (CONFIG.oauth && CONFIG.oauth.redirectUri) || location.origin + location.pathname;
+const session = {
+  get(k) {
+    try {
+      return sessionStorage.getItem(k);
+    } catch {
+      return null;
+    }
+  },
+  set(k, v) {
+    try {
+      sessionStorage.setItem(k, v);
+    } catch {
+      /* ignore */
+    }
+  },
+  del(k) {
+    try {
+      sessionStorage.removeItem(k);
+    } catch {
+      /* ignore */
+    }
+  },
+};
+
+function startOAuth() {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  const stateParam = [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
+  session.set(OAUTH_STATE_KEY, stateParam);
+  session.set(RETURN_HASH_KEY, location.hash || "");
+  const params = new URLSearchParams({
+    client_id: CONFIG.oauth.clientId,
+    redirect_uri: redirectUri(),
+    scope: "repo project",
+    state: stateParam,
+    allow_signup: "false",
+  });
+  location.href = `https://github.com/login/oauth/authorize?${params}`;
+}
+
+// Returns a token if this page load is GitHub redirecting back, null otherwise.
+async function finishOAuthIfReturning() {
+  const params = new URLSearchParams(location.search);
+  if (!params.has("code") && !params.has("error")) return null;
+  const expected = session.get(OAUTH_STATE_KEY);
+  const back = session.get(RETURN_HASH_KEY) || "";
+  session.del(OAUTH_STATE_KEY);
+  session.del(RETURN_HASH_KEY);
+  // Remove ?code=…&state=… from the address bar right away.
+  history.replaceState(null, "", location.pathname + back);
+
+  if (params.get("error")) {
+    throw new Error(
+      params.get("error") === "access_denied"
+        ? "Sign-in was cancelled on GitHub."
+        : params.get("error_description") || "GitHub sign-in failed."
+    );
+  }
+  if (!expected || params.get("state") !== expected) {
+    throw new Error("The sign-in link expired or did not come from this page. Please try again.");
+  }
+  const res = await fetch(CONFIG.oauth.workerUrl.replace(/\/$/, "") + "/exchange", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ code: params.get("code"), redirect_uri: redirectUri() }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.access_token) {
+    throw new Error(data.message || "Could not finish signing in with GitHub. Please try again.");
+  }
+  return data.access_token;
+}
+
 function renderLogin(message) {
   document.getElementById("topbar").hidden = true;
   const tokenUrl =
     "https://github.com/settings/tokens/new?scopes=repo,project&description=XR-JOE%20Tracker";
-  $app.innerHTML = `
-  <section class="login">
-    <div class="login-card">
-      <div class="brand brand-lg"><span class="brand-mark" aria-hidden="true"></span><span class="brand-name">XR-JOE <span class="brand-sub">Tracker</span></span></div>
-      <p class="lede">Meeting notes, decisions and the Kanban board of <strong>${esc(CONFIG.owner)}/${esc(CONFIG.repo)}</strong>, in one place. Everything is read from and saved to GitHub.</p>
-      ${message ? `<p class="notice notice-error">${esc(message)}</p>` : ""}
+  const oauth = oauthEnabled();
+  const tokenForm = `
       <form id="login-form" class="stack">
         <label class="field">
           <span>GitHub personal access token (classic)</span>
           <input class="input" type="password" name="token" autocomplete="off" spellcheck="false" placeholder="ghp_…" required />
         </label>
         <label class="check"><input type="checkbox" name="remember" checked /> Remember me on this device</label>
-        <button class="btn btn-primary" type="submit">Sign in</button>
+        <button class="btn ${oauth ? "" : "btn-primary"}" type="submit">Sign in with token</button>
       </form>
       <details class="help">
         <summary>How do I get a token?</summary>
@@ -250,8 +324,24 @@ function renderLogin(message) {
           <li>Pick an expiration (e.g. 90 days), then click <strong>Generate token</strong>.</li>
           <li>Copy the token (starts with <code>ghp_</code>) and paste it above.</li>
         </ol>
-        <p>The token stays in this browser only; it is sent to nobody except GitHub. You also need to be a collaborator on the repository and on the board.</p>
-      </details>
+        <p>The token stays in this browser only; it is sent to nobody except GitHub.</p>
+      </details>`;
+  $app.innerHTML = `
+  <section class="login">
+    <div class="login-card">
+      <div class="brand brand-lg"><span class="brand-mark" aria-hidden="true"></span><span class="brand-name">XR-JOE <span class="brand-sub">Tracker</span></span></div>
+      <p class="lede">Meeting notes, decisions and the Kanban board of <strong>${esc(CONFIG.owner)}/${esc(CONFIG.repo)}</strong>, in one place. Everything is read from and saved to GitHub.</p>
+      ${message ? `<p class="notice notice-error">${esc(message)}</p>` : ""}
+      ${
+        oauth
+          ? `<button class="btn btn-primary btn-github" data-action="oauth-start">
+               <svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+               Sign in with GitHub
+             </button>
+             <p class="muted small center">You need to be a collaborator on the repository and on the board.</p>
+             <details class="help alt-login"><summary>Use a personal access token instead</summary>${tokenForm}</details>`
+          : `${tokenForm}<p class="muted small">You need to be a collaborator on the repository and on the board.</p>`
+      }
       <p class="muted small">Just looking? <a href="?demo">Explore with demo data</a>.</p>
     </div>
   </section>`;
@@ -993,6 +1083,9 @@ document.addEventListener("click", async (e) => {
       return;
     }
     signOut();
+  } else if (a === "oauth-start") {
+    el.disabled = true;
+    startOAuth();
   } else if (a === "reload") {
     route();
   } else if (a === "toggle-ai") {
@@ -1061,6 +1154,20 @@ document.addEventListener("keydown", (e) => {
     state.user = await state.client.me();
     renderHeader();
     return route();
+  }
+  if (oauthEnabled()) {
+    try {
+      const oauthToken = await finishOAuthIfReturning();
+      if (oauthToken) {
+        $app.innerHTML = loading("Signing in…");
+        await signIn(oauthToken, true);
+        renderHeader();
+        return route();
+      }
+    } catch (e) {
+      console.error(e);
+      return renderLogin(friendlyError(e));
+    }
   }
   const token = store.get(TOKEN_KEY);
   if (!token) return renderLogin();

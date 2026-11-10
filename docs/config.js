@@ -22,4 +22,15 @@ export const CONFIG = {
 
   // Default attendees in the new-meeting template.
   attendees: "Oscar, Jay, Eduardo",
+
+  // "Sign in with GitHub". Fill in both values to show the button; leave them empty
+  // to use personal access tokens only. See README → "Sign in with GitHub".
+  oauth: {
+    // Client ID of the GitHub OAuth App (public, safe to commit). Never put the secret here.
+    clientId: "",
+    // URL of the Cloudflare Worker, e.g. "https://xr-joe-auth.yourname.workers.dev"
+    workerUrl: "",
+    // Must match (or be inside) the OAuth App's "Authorization callback URL".
+    redirectUri: "https://euardogracidas.github.io/XR-JOE-Progress-Update-Reports/",
+  },
 };

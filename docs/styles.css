@@ -192,6 +192,9 @@ textarea.input { resize: vertical; }
   display: flex; flex-direction: column; gap: 18px;
 }
 .lede { margin: 0; color: var(--muted); }
+.btn-github { justify-content: center; padding: 11px 16px; font-size: 15px; }
+.center { text-align: center; margin: -6px 0 0; }
+.alt-login[open] summary { margin-bottom: 12px; }
 .help summary { cursor: pointer; font-weight: 500; color: var(--accent); }
 .help ol { padding-left: 20px; margin: 10px 0; }
 .help li { margin-bottom: 6px; }

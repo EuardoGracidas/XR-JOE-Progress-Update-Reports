@@ -19,17 +19,17 @@ The website code lives in this `docs/` folder. GitHub Pages publishes **only** t
 
 ## Signing in
 
-You need two things:
+You must be a collaborator on the private repository *and* on the Projects board (see [Giving someone access](#giving-someone-access)). Then:
 
-1. **Access on GitHub.** You must be a collaborator on the private repository *and* on the Projects board (see [Giving someone access](#giving-someone-access)).
-2. **A personal access token (classic)** with the `repo` and `project` scopes:
-   1. Open [this link](https://github.com/settings/tokens/new?scopes=repo,project&description=XR-JOE%20Tracker). It pre-selects the two scopes.
-   2. Choose an expiration (90 days is a good balance) and click **Generate token**.
-   3. Copy the token (it starts with `ghp_`) and paste it on the site's sign-in page.
+- **Sign in with GitHub** (recommended): click the button, approve the *XR-JOE Tracker* app on GitHub the first time, and you are in. Nothing to copy or paste. This button appears once the one-time setup in [Setting up “Sign in with GitHub”](#setting-up-sign-in-with-github) is done.
+- **Personal access token** (fallback, under *Use a personal access token instead*):
+  1. Open [this link](https://github.com/settings/tokens/new?scopes=repo,project&description=XR-JOE%20Tracker). It pre-selects the `repo` and `project` scopes.
+  2. Choose an expiration and click **Generate token**.
+  3. Paste the token (starts with `ghp_`) on the sign-in page.
 
-> **Why a classic token?** The board is owned by a personal account. GitHub's fine-grained tokens cannot access Projects owned by personal accounts, only those owned by organizations.
+  > **Why a classic token?** The board is owned by a personal account, and GitHub's fine-grained tokens cannot access Projects owned by personal accounts.
 
-The token is stored only in your browser: in `localStorage` with “Remember me” checked, or for the current tab only with it unchecked. It is sent to `api.github.com` and nowhere else. **Sign out** removes it. To revoke it completely, delete it in [GitHub → Settings → Tokens](https://github.com/settings/tokens).
+Either way, the access token is stored only in your browser and sent only to `api.github.com`. **Sign out** removes it from the browser. To revoke access completely, go to [GitHub → Settings → Applications → Authorized OAuth Apps](https://github.com/settings/applications) (for the button) or [Tokens](https://github.com/settings/tokens) (for a token).
 
 To look around without signing in, add `?demo` to the address. The demo uses made-up data and saves nothing.
 
@@ -41,7 +41,7 @@ For Dr. Meruvia-Pastor, Dr. Henderson, or anyone new:
 
 1. **Repository:** in `XR-JOE-Progress-Update-Reports` → **Settings → Collaborators → Add people**. They need to accept the email invitation.
 2. **Board:** open the board → **⋯ (top right) → Settings → Manage access → Invite collaborators**, and give them the **Write** role.
-3. They create their own token (steps above) and sign in.
+3. They open the site and click **Sign in with GitHub**.
 
 ---
 
@@ -68,6 +68,31 @@ Notes are the record of what was agreed, so only edit past meetings when strictl
 > Pages on a **private** repository needs GitHub Pro, which is free for students through the [GitHub Student Developer Pack](https://education.github.com/pack). The published site itself is public, but it contains no project data.
 
 The site is plain HTML, CSS and JavaScript, so there is no build step. Markdown is rendered with [marked](https://github.com/markedjs/marked) and sanitized with [DOMPurify](https://github.com/cure53/DOMPurify). Both are bundled in `vendor/` (MIT / Apache-2.0 licenses included).
+
+### Setting up “Sign in with GitHub”
+
+GitHub only hands out sign-in tokens to a server that knows the app's secret, and GitHub Pages cannot keep secrets. A tiny free [Cloudflare Worker](https://developers.cloudflare.com/workers/) (`oauth-worker/worker.js` in this repository) does that single step. It stores nothing. This is a one-time setup for the repository owner.
+
+**1. Create the GitHub OAuth App**
+1. GitHub → **Settings → Developer settings → OAuth Apps → New OAuth App**.
+2. Application name: `XR-JOE Tracker`.
+3. Homepage URL **and** Authorization callback URL: `https://euardogracidas.github.io/XR-JOE-Progress-Update-Reports/`
+4. **Register application**. Copy the **Client ID**, then click **Generate a new client secret** and copy the secret. Keep the secret private: it only goes into Cloudflare.
+
+**2. Create the Cloudflare Worker** (free plan)
+1. Sign up at [dash.cloudflare.com](https://dash.cloudflare.com/sign-up), then go to **Workers & Pages → Create → Worker** (start from “Hello World”). Name it e.g. `xr-joe-auth` and deploy it.
+2. **Edit code**, replace everything with the contents of [`oauth-worker/worker.js`](../oauth-worker/worker.js), and **Deploy**.
+3. Worker → **Settings → Variables and Secrets**, add:
+   | Name | Type | Value |
+   |---|---|---|
+   | `GITHUB_CLIENT_ID` | Text | the Client ID |
+   | `GITHUB_CLIENT_SECRET` | **Secret** | the client secret |
+   | `ALLOWED_ORIGINS` | Text | `https://euardogracidas.github.io` |
+4. Open the Worker's URL (`https://xr-joe-auth.<your-subdomain>.workers.dev`). It should say `"configured": true`.
+
+**3. Point the site at it**
+
+In `docs/config.js`, fill in `oauth.clientId` (the Client ID, which is public) and `oauth.workerUrl` (the Worker URL), then commit. The **Sign in with GitHub** button appears on the next page load.
 
 ### Settings
 
