@@ -77,7 +77,8 @@ GitHub only hands out sign-in tokens to a server that knows the app's secret, an
 1. GitHub → **Settings → Developer settings → OAuth Apps → New OAuth App**.
 2. Application name: `XR-JOE Tracker`.
 3. Homepage URL **and** Authorization callback URL: `https://euardogracidas.github.io/XR-JOE-Progress-Update-Reports/`
-4. **Register application**. Copy the **Client ID**, then click **Generate a new client secret** and copy the secret. Keep the secret private: it only goes into Cloudflare.
+4. Leave **Expire user access tokens** checked. The site renews sessions automatically through the Worker, so people stay signed in.
+5. **Register application**. Copy the **Client ID**, then click **Generate a new client secret** and copy the secret. Keep the secret private: it only goes into Cloudflare.
 
 **2. Create the Cloudflare Worker** (free plan)
 1. Sign up at [dash.cloudflare.com](https://dash.cloudflare.com/sign-up), then go to **Workers & Pages → Create → Worker** (start from “Hello World”). Name it e.g. `xr-joe-auth` and deploy it.

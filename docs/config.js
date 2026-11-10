@@ -27,9 +27,9 @@ export const CONFIG = {
   // to use personal access tokens only. See README → "Sign in with GitHub".
   oauth: {
     // Client ID of the GitHub OAuth App (public, safe to commit). Never put the secret here.
-    clientId: "",
+    clientId: "Ov23liL4UI5rUJqNb2w0",
     // URL of the Cloudflare Worker, e.g. "https://xr-joe-auth.yourname.workers.dev"
-    workerUrl: "",
+    workerUrl: "https://xr-joe-auth.egracidasrey.workers.dev",
     // Must match (or be inside) the OAuth App's "Authorization callback URL".
     redirectUri: "https://euardogracidas.github.io/XR-JOE-Progress-Update-Reports/",
   },

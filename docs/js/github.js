@@ -42,22 +42,32 @@ const ITEM_FIELDS = `
   }`;
 
 export class GitHubClient {
+  // `token` is either a string or an async function (force) => string that returns a
+  // fresh token, renewing it when it is about to expire (Sign in with GitHub).
   constructor(token) {
-    this.token = token;
+    this.getToken = typeof token === "function" ? token : async () => token;
+    this.renewable = typeof token === "function";
     this.demo = false;
   }
 
+  // fetch() with the Authorization header; on 401 renews the token once and retries.
+  async _fetch(url, init = {}) {
+    const go = async (force) =>
+      fetch(url, { ...init, headers: { ...(init.headers || {}), Authorization: `Bearer ${await this.getToken(force)}` }, cache: "no-store" });
+    let res = await go(false);
+    if (res.status === 401 && this.renewable) res = await go(true);
+    return res;
+  }
+
   async rest(path, { method = "GET", body } = {}) {
-    const res = await fetch(API + path, {
+    const res = await this._fetch(API + path, {
       method,
       headers: {
-        Authorization: `Bearer ${this.token}`,
         Accept: "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
         ...(body ? { "Content-Type": "application/json" } : {}),
       },
       body: body ? JSON.stringify(body) : undefined,
-      cache: "no-store",
     });
     if (res.status === 204) return null;
     const data = await res.json().catch(() => null);
@@ -68,11 +78,10 @@ export class GitHubClient {
   }
 
   async graphql(query, variables = {}) {
-    const res = await fetch(API + "/graphql", {
+    const res = await this._fetch(API + "/graphql", {
       method: "POST",
-      headers: { Authorization: `Bearer ${this.token}`, "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ query, variables }),
-      cache: "no-store",
     });
     const data = await res.json().catch(() => null);
     if (!res.ok) throw new GitHubError((data && data.message) || `GitHub returned ${res.status}`, res.status);
@@ -85,10 +94,7 @@ export class GitHubClient {
 
   // ---------- Identity ----------
   async me() {
-    const res = await fetch(API + "/user", {
-      headers: { Authorization: `Bearer ${this.token}`, Accept: "application/vnd.github+json" },
-      cache: "no-store",
-    });
+    const res = await this._fetch(API + "/user", { headers: { Accept: "application/vnd.github+json" } });
     const data = await res.json().catch(() => null);
     if (!res.ok) throw new GitHubError((data && data.message) || "Invalid token", res.status);
     const scopes = (res.headers.get("x-oauth-scopes") || "").split(",").map((s) => s.trim()).filter(Boolean);

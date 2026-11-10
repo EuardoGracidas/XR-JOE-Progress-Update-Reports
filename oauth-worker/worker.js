@@ -1,4 +1,4 @@
-// Cloudflare Worker: exchanges a GitHub OAuth "code" for an access token.
+// Cloudflare Worker: exchanges a GitHub OAuth "code" (or a refresh token) for an access token.
 //
 // GitHub's token endpoint needs the OAuth App's client secret and does not allow
 // browser (CORS) requests, so the static tracker page cannot do this step itself.
@@ -57,20 +57,26 @@ export default {
       return json({ error: "bad_request", message: "Expected a JSON body." }, 400);
     }
     const code = typeof body.code === "string" ? body.code : "";
+    const refreshToken = typeof body.refresh_token === "string" ? body.refresh_token : "";
     const redirectUri = typeof body.redirect_uri === "string" ? body.redirect_uri : undefined;
-    if (!/^[A-Za-z0-9_-]{1,100}$/.test(code)) {
-      return json({ error: "bad_request", message: "Missing or malformed code." }, 400);
+    let grant;
+    if (refreshToken) {
+      // Renew an expiring user access token.
+      if (!/^[A-Za-z0-9_-]{1,200}$/.test(refreshToken)) {
+        return json({ error: "bad_request", message: "Malformed refresh token." }, 400);
+      }
+      grant = { grant_type: "refresh_token", refresh_token: refreshToken };
+    } else {
+      if (!/^[A-Za-z0-9_-]{1,100}$/.test(code)) {
+        return json({ error: "bad_request", message: "Missing or malformed code." }, 400);
+      }
+      grant = { code, ...(redirectUri ? { redirect_uri: redirectUri } : {}) };
     }
 
     const gh = await fetch("https://github.com/login/oauth/access_token", {
       method: "POST",
       headers: { Accept: "application/json", "Content-Type": "application/json", "User-Agent": "xr-joe-tracker-oauth" },
-      body: JSON.stringify({
-        client_id: env.GITHUB_CLIENT_ID,
-        client_secret: env.GITHUB_CLIENT_SECRET,
-        code,
-        ...(redirectUri ? { redirect_uri: redirectUri } : {}),
-      }),
+      body: JSON.stringify({ client_id: env.GITHUB_CLIENT_ID, client_secret: env.GITHUB_CLIENT_SECRET, ...grant }),
     });
     const data = await gh.json().catch(() => ({}));
 
@@ -80,6 +86,14 @@ export default {
         400
       );
     }
-    return json({ access_token: data.access_token, scope: data.scope || "", token_type: data.token_type || "bearer" });
+    return json({
+      access_token: data.access_token,
+      scope: data.scope || "",
+      token_type: data.token_type || "bearer",
+      // Present when the OAuth App has "Expire user access tokens" enabled.
+      expires_in: data.expires_in || null,
+      refresh_token: data.refresh_token || null,
+      refresh_token_expires_in: data.refresh_token_expires_in || null,
+    });
   },
 };

@@ -190,12 +190,13 @@ async function loadCollaborators() {
 }
 
 // ---------------------------------------------------------------- auth
+// `token` is a personal access token (string) or the OAuth token provider (function).
 async function signIn(token, remember) {
   const client = new GitHubClient(token);
   const user = await client.me();
   // Probe the repository so a wrong token fails here rather than on every page.
   await client.rest(`/repos/${CONFIG.owner}/${CONFIG.repo}`);
-  store.set(TOKEN_KEY, token, remember);
+  if (typeof token === "string") store.set(TOKEN_KEY, token, remember);
   state.client = client;
   state.user = user;
   const missing = ["repo", "project"].filter((s) => !user.scopes.includes(s));
@@ -207,6 +208,8 @@ async function signIn(token, remember) {
 }
 function signOut(message) {
   store.del(TOKEN_KEY);
+  store.del(OAUTH_KEY);
+  oauthSession = null;
   Object.assign(state, { client: null, user: null, meetings: null, projects: null, project: null, collaborators: null });
   state.meetingData.clear();
   state.dirty = false;
@@ -230,6 +233,54 @@ const OAUTH_STATE_KEY = "xrjoe.oauthState";
 const RETURN_HASH_KEY = "xrjoe.returnHash";
 const oauthEnabled = () => !!(CONFIG.oauth && CONFIG.oauth.clientId && CONFIG.oauth.workerUrl);
 const redirectUri = () => (CONFIG.oauth && CONFIG.oauth.redirectUri) || location.origin + location.pathname;
+const workerEndpoint = () => CONFIG.oauth.workerUrl.replace(/\/$/, "") + "/exchange";
+
+// Sign-in-with-GitHub session: { accessToken, refreshToken, expiresAt (ms epoch or null) }.
+// GitHub user tokens from this app expire after a few hours; the refresh token renews them
+// through the Worker, so people stay signed in without noticing.
+const OAUTH_KEY = "xrjoe.oauth";
+let oauthSession = null;
+let refreshing = null;
+function saveOAuth(sess) {
+  oauthSession = sess;
+  store.set(OAUTH_KEY, JSON.stringify(sess), true);
+}
+function sessionFrom(d) {
+  return {
+    accessToken: d.access_token,
+    refreshToken: d.refresh_token || null,
+    expiresAt: d.expires_in ? Date.now() + d.expires_in * 1000 : null,
+  };
+}
+async function callWorker(payload) {
+  const res = await fetch(workerEndpoint(), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.access_token) {
+    throw Object.assign(new Error(data.message || "Could not finish signing in with GitHub. Please try again."), {
+      status: payload.refresh_token ? 401 : 0,
+    });
+  }
+  return data;
+}
+async function oauthToken(force = false) {
+  const s = oauthSession;
+  if (!s) throw Object.assign(new Error("Not signed in."), { status: 401 });
+  const fresh = !s.expiresAt || s.expiresAt - Date.now() > 60_000;
+  if ((!force && fresh) || !s.refreshToken) return s.accessToken;
+  if (!refreshing) {
+    refreshing = callWorker({ refresh_token: s.refreshToken })
+      .then((d) => {
+        saveOAuth(sessionFrom(d));
+        return d.access_token;
+      })
+      .finally(() => (refreshing = null));
+  }
+  return refreshing;
+}
 const session = {
   get(k) {
     try {
@@ -270,7 +321,7 @@ function startOAuth() {
   location.href = `https://github.com/login/oauth/authorize?${params}`;
 }
 
-// Returns a token if this page load is GitHub redirecting back, null otherwise.
+// Returns the Worker's token response if this page load is GitHub redirecting back, null otherwise.
 async function finishOAuthIfReturning() {
   const params = new URLSearchParams(location.search);
   if (!params.has("code") && !params.has("error")) return null;
@@ -291,16 +342,7 @@ async function finishOAuthIfReturning() {
   if (!expected || params.get("state") !== expected) {
     throw new Error("The sign-in link expired or did not come from this page. Please try again.");
   }
-  const res = await fetch(CONFIG.oauth.workerUrl.replace(/\/$/, "") + "/exchange", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ code: params.get("code"), redirect_uri: redirectUri() }),
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok || !data.access_token) {
-    throw new Error(data.message || "Could not finish signing in with GitHub. Please try again.");
-  }
-  return data.access_token;
+  return callWorker({ code: params.get("code"), redirect_uri: redirectUri() });
 }
 
 function renderLogin(message) {
@@ -1157,16 +1199,28 @@ document.addEventListener("keydown", (e) => {
   }
   if (oauthEnabled()) {
     try {
-      const oauthToken = await finishOAuthIfReturning();
-      if (oauthToken) {
+      const returned = await finishOAuthIfReturning();
+      if (returned) {
         $app.innerHTML = loading("Signing in…");
+        store.del(TOKEN_KEY);
+        saveOAuth(sessionFrom(returned));
+        await signIn(oauthToken, true);
+        renderHeader();
+        return route();
+      }
+      const saved = store.get(OAUTH_KEY);
+      if (saved) {
+        $app.innerHTML = loading("Signing in…");
+        oauthSession = JSON.parse(saved);
         await signIn(oauthToken, true);
         renderHeader();
         return route();
       }
     } catch (e) {
       console.error(e);
-      return renderLogin(friendlyError(e));
+      store.del(OAUTH_KEY);
+      oauthSession = null;
+      return renderLogin(e.status === 401 ? "Your GitHub session expired. Please sign in again." : friendlyError(e));
     }
   }
   const token = store.get(TOKEN_KEY);
