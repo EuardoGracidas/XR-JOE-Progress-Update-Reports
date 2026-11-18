@@ -1,0 +1,48 @@
+name: Publish public snapshot
+
+# Copies the board and the meeting notes into docs/data/snapshot.json, which the
+# public (read-only) view of the site reads. Runs every 15 minutes, whenever an issue
+# or the meeting notes change, and on demand from the Actions tab.
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  issues:
+  push:
+    branches: [main]
+    paths: ["meetings/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-snapshot
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Export board and meeting notes
+        env:
+          BOARD_TOKEN: ${{ secrets.BOARD_TOKEN }}
+        run: node scripts/export-snapshot.mjs
+
+      - name: Commit if changed
+        run: |
+          if git diff --quiet -- docs/data && [ -z "$(git status --porcelain -- docs/data)" ]; then
+            echo "Nothing to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/data
+          git commit -m "Update public snapshot of the board and meeting notes"
+          git pull --rebase --autostash
+          git push

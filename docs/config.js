@@ -1,7 +1,7 @@
 // Settings for the XR-JOE dashboard.
 // Change these if the data repository or the board ever moves.
 export const CONFIG = {
-  // Private repository that holds the meeting notes (and is linked to the board).
+  // Repository that holds the meeting notes (and is linked to the board).
   owner: "EuardoGracidas",
   repo: "XR-JOE-Progress-Update-Reports",
   branch: "main",
@@ -23,6 +23,11 @@ export const CONFIG = {
 
   // Column that new cards (and action items sent to the board) go to.
   defaultColumn: "Ready",
+
+  // GitHub usernames that see the editing controls when signed in. Everyone else, including
+  // visitors who do not sign in, gets the read-only view. Leave empty to let any signed-in
+  // collaborator edit.
+  editors: ["EuardoGracidas"],
 
   // Default attendees in the new-meeting template.
   attendees: "Oscar, Jay, Eduardo",

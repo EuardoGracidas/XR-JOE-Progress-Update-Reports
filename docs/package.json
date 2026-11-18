@@ -1,0 +1,5 @@
+{
+  "private": true,
+  "type": "module",
+  "description": "Lets scripts/export-snapshot.mjs import the site's modules in Node. Not needed by the browser."
+}

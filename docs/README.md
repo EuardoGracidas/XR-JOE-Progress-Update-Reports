@@ -13,13 +13,34 @@ It has **no database of its own**. Everything is read from and saved to GitHub:
 
 Anything you change here shows up on GitHub, and anything changed on GitHub shows up here after a refresh.
 
-The website code lives in this `docs/` folder. GitHub Pages publishes **only** this folder, so the meeting notes are never part of the public site: the page loads them from the private repository only after you sign in with your own GitHub token.
+The website code lives in this `docs/` folder, which is what GitHub Pages publishes.
+
+---
+
+## Public read-only view
+
+Anyone with the link can follow the project without a GitHub account or signing in: the Overview, Board, Meetings and Decisions pages all work, but nothing can be changed.
+
+GitHub's API cannot read a Projects board without a token, so the public view shows a copy instead. The **Publish public snapshot** Action (`.github/workflows/publish-snapshot.yml`) writes the board and the meeting notes to `docs/data/snapshot.json` every 15 minutes, whenever an issue changes, and whenever the meeting notes change. The header shows when the copy was last updated.
+
+Everything on the board (titles, descriptions, assignees, milestones) is visible to anyone with the link, so keep anything private off the board.
+
+**One-time setup (repository owner):**
+1. Create a [classic token with only the `read:project` scope](https://github.com/settings/tokens/new?scopes=read:project&description=XR-JOE%20public%20snapshot). Choose *No expiration*, or remember to renew it.
+2. In this repository: **Settings → Secrets and variables → Actions → New repository secret**. Name: `BOARD_TOKEN`, value: the token.
+3. **Actions → Publish public snapshot → Run workflow**. About a minute after it finishes, the site shows the read-only view.
+
+Until the first snapshot exists, the site shows the sign-in page as before.
+
+## Who can edit
+
+Only the GitHub users listed in `editors` in `config.js` (currently `EuardoGracidas`) see the editing controls after signing in. Anyone else who signs in gets the same read-only view as visitors. On GitHub itself, write access is set by the repository and board collaborators.
 
 ---
 
 ## Signing in
 
-You must be a collaborator on the private repository *and* on the Projects board (see [Giving someone access](#giving-someone-access)). Then:
+Signing in is only needed for editing. You must be a collaborator on the repository *and* on the Projects board, and be listed in `editors`. Then:
 
 - **Sign in with GitHub** (recommended): click the button, approve the *XR-JOE Tracker* app on GitHub the first time, and you are in. Nothing to copy or paste. This button appears once the one-time setup in [Setting up “Sign in with GitHub”](#setting-up-sign-in-with-github) is done.
 - **Personal access token** (fallback, under *Use a personal access token instead*):
@@ -35,13 +56,14 @@ To look around without signing in, add `?demo` to the address. The demo uses mad
 
 ---
 
-## Giving someone access
+## Giving someone edit access
 
-For Dr. Meruvia-Pastor, Dr. Henderson, or anyone new:
+Supervisors and other readers need nothing: send them the site link. To let someone else edit:
 
-1. **Repository:** in `XR-JOE-Progress-Update-Reports` → **Settings → Collaborators → Add people**. They need to accept the email invitation.
-2. **Board:** open the board → **⋯ (top right) → Settings → Manage access → Invite collaborators**, and give them the **Write** role.
-3. They open the site and click **Sign in with GitHub**.
+1. **Editors list:** add their GitHub username to `editors` in `config.js`.
+2. **Repository:** in `XR-JOE-Progress-Update-Reports` → **Settings → Collaborators → Add people**. They need to accept the email invitation.
+3. **Board:** open the board → **⋯ (top right) → Settings → Manage access → Invite collaborators**, and give them the **Write** role.
+4. They open the site and click **Sign in with GitHub**.
 
 ---
 
@@ -62,10 +84,9 @@ Notes are the record of what was agreed, so only edit past meetings when strictl
 ## Publishing with GitHub Pages
 
 1. In this repository: **Settings → Pages → Build and deployment → Source: Deploy from a branch**.
-2. Branch `main`, folder **`/docs`** (not root, so the meeting notes are not published), then **Save**.
+2. Branch `main`, folder **`/docs`**, then **Save**.
 3. After about a minute the site is live at `https://euardogracidas.github.io/XR-JOE-Progress-Update-Reports/`.
 
-> Pages on a **private** repository needs GitHub Pro, which is free for students through the [GitHub Student Developer Pack](https://education.github.com/pack). The published site itself is public, but it contains no project data.
 
 The site is plain HTML, CSS and JavaScript, so there is no build step. Markdown is rendered with [marked](https://github.com/markedjs/marked) and sanitized with [DOMPurify](https://github.com/cure53/DOMPurify). Both are bundled in `vendor/` (MIT / Apache-2.0 licenses included).
 
@@ -104,7 +125,7 @@ In `docs/config.js`, fill in `oauth.clientId` (the Client ID, which is public) a
 ```sh
 cd docs
 python3 -m http.server 8000
-# open http://localhost:8000/?demo   (or without ?demo to sign in)
+# open http://localhost:8000/?demo   (or without ?demo for the read-only view / sign in)
 ```
 
 ---
@@ -117,7 +138,13 @@ styles.css        styles (light and dark mode)
 config.js         repository / board settings
 js/app.js         views, routing and interactions
 js/github.js      GitHub REST (files) + GraphQL (Projects) client
+js/public.js      read-only client for visitors (reads data/snapshot.json)
 js/meetings.js    meeting-notes template and parser
 js/demo.js        in-memory data for ?demo
 vendor/           marked + DOMPurify
+data/snapshot.json  public copy of the board and notes (written by the Action, do not edit)
+package.json      lets the export script import these modules in Node
+
+../scripts/export-snapshot.mjs        writes data/snapshot.json
+../.github/workflows/publish-snapshot.yml  runs it on a schedule
 ```

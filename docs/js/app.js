@@ -1,6 +1,7 @@
 import { CONFIG } from "../config.js";
 import { GitHubClient } from "./github.js";
 import { DemoClient } from "./demo.js";
+import { PublicClient } from "./public.js";
 import { parseMeeting, meetingTemplate, toggleActionLine, dateFromName } from "./meetings.js";
 
 // ---------------------------------------------------------------- storage
@@ -41,7 +42,14 @@ const state = {
   project: null,
   collaborators: null,
   dirty: false, // unsaved editor changes
+  canEdit: false, // false for visitors (read-only snapshot) and for signed-in people not listed in CONFIG.editors
 };
+
+// Only people listed in CONFIG.editors (or anyone, if the list is empty) see editing controls.
+function isEditor(login) {
+  const list = (CONFIG.editors || []).map((x) => x.toLowerCase());
+  return !list.length || list.includes(String(login || "").toLowerCase());
+}
 
 const $app = document.getElementById("app");
 const $modalRoot = document.getElementById("modal-root");
@@ -261,6 +269,7 @@ async function signIn(token, remember) {
   if (typeof token === "string") store.set(TOKEN_KEY, token, remember);
   state.client = client;
   state.user = user;
+  state.canEdit = isEditor(user.login);
   const missing = ["repo", "project"].filter((s) => !user.scopes.includes(s));
   if (user.scopes.length === 0) {
     toast("This looks like a fine-grained token. The board needs a classic token with the “repo” and “project” scopes.", "warn");
@@ -276,18 +285,46 @@ function signOut(message) {
   state.meetingData.clear();
   state.dirty = false;
   if (location.hash && location.hash !== "#/") history.replaceState(null, "", location.pathname + location.search);
-  renderLogin(message);
+  enterPublic(message);
+}
+
+// Read-only view for visitors. Falls back to the sign-in page if no snapshot is published yet.
+async function enterPublic(message) {
+  $app.innerHTML = loading("Loading…");
+  const client = await PublicClient.load();
+  if (!client) return renderLogin(message);
+  Object.assign(state, { client, user: await client.me(), canEdit: false, meetings: null, projects: null, project: null, collaborators: null });
+  state.meetingData.clear();
+  renderHeader();
+  if (message) toast(message, "warn");
+  route();
 }
 
 function renderHeader() {
   const bar = document.getElementById("topbar");
   bar.hidden = false;
   const u = state.user;
+  if (state.client.isPublic) {
+    const when = state.client.updatedAt ? new Date(state.client.updatedAt) : null;
+    document.getElementById("who").innerHTML = `
+      <span class="pill" title="${when ? esc(when.toLocaleString()) : ""}">Read-only${when ? ` · updated ${esc(agoText(when))}` : ""}</span>
+      <button class="btn btn-ghost btn-sm" data-action="show-login">Sign in</button>`;
+    return;
+  }
   document.getElementById("who").innerHTML = `
     ${state.client.demo ? '<span class="pill pill-warn">Demo data</span>' : ""}
     ${avatar(u, 26)}
     <span class="who-name">${esc(u.name || u.login)}</span>
+    ${!state.canEdit && !state.client.demo ? '<span class="pill">Read-only</span>' : ""}
     <button class="btn btn-ghost btn-sm" data-action="signout">${state.client.demo ? "Exit demo" : "Sign out"}</button>`;
+}
+function agoText(date) {
+  const min = Math.round((Date.now() - date.getTime()) / 60000);
+  if (min < 1) return "just now";
+  if (min < 60) return `${min} min ago`;
+  const h = Math.round(min / 60);
+  if (h < 24) return `${h} h ago`;
+  return prettyDate(date.toISOString().slice(0, 10));
 }
 
 // ---------------------------------------------------------------- GitHub OAuth (via Cloudflare Worker)
@@ -442,11 +479,11 @@ function renderLogin(message) {
                <svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
                Sign in with GitHub
              </button>
-             <p class="muted small center">You need to be a collaborator on the repository and on the board.</p>
+             <p class="muted small center">Only needed for editing. Anyone can follow the project without signing in.</p>
              <details class="help alt-login"><summary>Use a personal access token instead</summary>${tokenForm}</details>`
-          : `${tokenForm}<p class="muted small">You need to be a collaborator on the repository and on the board.</p>`
+          : `${tokenForm}<p class="muted small">Only needed for editing. Anyone can follow the project without signing in.</p>`
       }
-      <p class="muted small">Just looking? <a href="?demo">Explore with demo data</a>.</p>
+      <p class="muted small"><a href="#/" data-action="show-public">← Back to the read-only view</a> · <a href="?demo">Demo data</a></p>
     </div>
   </section>`;
   const form = document.getElementById("login-form");
@@ -485,8 +522,9 @@ async function route() {
     if (section === "board") return await viewBoard();
     if (section === "decisions") return await viewDecisions();
     if (section === "meetings") {
-      if (arg === "new") return await viewEditor(null);
-      if (arg && sub === "edit") return await viewEditor(arg);
+      if (state.canEdit && arg === "new") return await viewEditor(null);
+      if (state.canEdit && arg && sub === "edit") return await viewEditor(arg);
+      if (arg === "new" || sub === "edit") return (location.hash = "#/meetings");
       return await viewMeetings(arg);
     }
     location.hash = "#/";
@@ -517,8 +555,8 @@ function actionItemRow(a, onBoardTitles) {
   const onBoard = onBoardTitles && onBoardTitles.has(norm(a.task));
   return `
     <li class="action ${a.done ? "is-done" : ""}">
-      <label class="action-check" title="${a.done ? "Mark as not done" : "Mark as done"}">
-        <input type="checkbox" ${a.done ? "checked" : ""} data-action="toggle-ai" data-file="${esc(a.file)}" data-raw="${esc(a.raw)}" />
+      <label class="action-check" title="${state.canEdit ? (a.done ? "Mark as not done" : "Mark as done") : a.done ? "Done" : "Not done yet"}">
+        <input type="checkbox" ${a.done ? "checked" : ""} ${state.canEdit ? "" : "disabled"} data-action="toggle-ai" data-file="${esc(a.file)}" data-raw="${esc(a.raw)}" />
       </label>
       <div class="action-body">
         <div class="action-task">${mdInline(a.task)}</div>
@@ -529,7 +567,7 @@ function actionItemRow(a, onBoardTitles) {
         </div>
       </div>
       ${
-        onBoardTitles === null
+        onBoardTitles === null || !state.canEdit
           ? ""
           : onBoard
             ? '<span class="pill pill-ok" title="A card with this title is on the board">On board</span>'
@@ -602,12 +640,10 @@ async function viewOverview() {
   $app.innerHTML = `
   <div class="page-head">
     <div>
-      <h1>Hi, ${esc((state.user.name || state.user.login).split(" ")[0])}</h1>
+      <h1>${state.client.isPublic ? "XR-JOE progress" : `Hi, ${esc((state.user.name || state.user.login).split(" ")[0])}`}</h1>
       <p class="muted">Bi-weekly progress for XR-JOE · ${meetings.length} meeting${meetings.length === 1 ? "" : "s"} recorded</p>
     </div>
-    <div class="actions">
-      <a class="btn btn-primary" href="#/meetings/new">New meeting notes</a>
-    </div>
+    ${state.canEdit ? `<div class="actions"><a class="btn btn-primary" href="#/meetings/new">New meeting notes</a></div>` : ""}
   </div>
   <div class="grid">
     <section class="card card-accent">
@@ -746,7 +782,7 @@ async function viewBoard(force = false) {
   <div class="page-head">
     <div>
       <h1>${esc(board.title)}</h1>
-      <p class="muted">Drag cards between columns, or click a card to open it. Changes are saved to GitHub Projects.</p>
+      <p class="muted">${state.canEdit ? "Drag cards between columns, or click a card to open it. Changes are saved to GitHub Projects." : "Click a card to see its details."}</p>
     </div>
     <div class="actions">
       ${
@@ -756,9 +792,9 @@ async function viewBoard(force = false) {
               .join("")}</select>`
           : ""
       }
-      <button class="btn" data-action="board-refresh" title="Reload from GitHub">Refresh</button>
+      ${state.client.isPublic ? "" : `<button class="btn" data-action="board-refresh" title="Reload from GitHub">Refresh</button>`}
       ${board.url && board.url !== "#" ? `<a class="btn" href="${esc(board.url)}" target="_blank" rel="noopener noreferrer">Open on GitHub</a>` : ""}
-      <button class="btn btn-primary" data-action="new-card">New card</button>
+      ${state.canEdit ? `<button class="btn btn-primary" data-action="new-card">New card</button>` : ""}
     </div>
   </div>
   <div class="filters">
@@ -804,12 +840,12 @@ async function viewBoard(force = false) {
         <div class="col-body" data-drop="${esc(c.id)}">
           ${visible.map((i) => cardHtml(i, curMilestone)).join("") || '<p class="col-empty">No cards</p>'}
         </div>
-        ${c.id ? `<button class="add-inline" data-action="new-card" data-col="${esc(c.id)}">+ Add card</button>` : ""}
+        ${c.id && state.canEdit ? `<button class="add-inline" data-action="new-card" data-col="${esc(c.id)}">+ Add card</button>` : ""}
       </section>`;
       })
       .join("")}
   </div>`;
-  wireDragAndDrop();
+  if (state.canEdit) wireDragAndDrop();
 }
 
 function cardHtml(i, curMilestone = null) {
@@ -820,7 +856,7 @@ function cardHtml(i, curMilestone = null) {
         ? `<span class="kind kind-pr">PR #${esc(i.number)}</span>`
         : `<span class="kind">Draft</span>`;
   return `
-    <article class="kcard" draggable="true" tabindex="0" data-item="${esc(i.id)}" aria-label="${esc(i.title)}">
+    <article class="kcard" draggable="${state.canEdit ? "true" : "false"}" tabindex="0" data-item="${esc(i.id)}" aria-label="${esc(i.title)}">
       <div class="kcard-top">${kind}${i.state === "CLOSED" || i.state === "MERGED" ? `<span class="kind">${esc(i.state.toLowerCase())}</span>` : ""}</div>
       <h3 class="kcard-title">${esc(i.title)}</h3>
       ${i.labels.length ? `<div class="labels">${i.labels.map((l) => `<span class="label" style="--lc:#${esc(l.color)}">${esc(l.name)}</span>`).join("")}</div>` : ""}
@@ -865,7 +901,7 @@ function wireDragAndDrop() {
 async function moveCard(itemId, optionId) {
   const board = state.project;
   const item = board.items.find((i) => i.id === itemId);
-  if (!item || item.statusId === optionId) return;
+  if (!item || item.statusId === optionId || !state.canEdit) return;
   const prev = item.statusId;
   item.statusId = optionId; // optimistic
   if (location.hash.startsWith("#/board")) viewBoard();
@@ -903,7 +939,7 @@ async function openCard(itemId, mode = "view") {
   const board = state.project;
   const item = board?.items.find((i) => i.id === itemId);
   if (!item) return;
-  if (mode === "edit") return openCardEditor(item, board);
+  if (mode === "edit" && state.canEdit) return openCardEditor(item, board);
 
   const status = board.statusField.options.find((o) => o.id === item.statusId);
   const sf = board.sprintField;
@@ -949,13 +985,13 @@ async function openCard(itemId, mode = "view") {
         }
       </dl>
       <div class="cv-body ${item.body.trim() ? "prose" : ""}">${
-        item.body.trim() ? md(item.body) : '<p class="muted">No description yet. Click <strong>Edit</strong> to add one.</p>'
+        item.body.trim() ? md(item.body) : `<p class="muted">No description yet.${state.canEdit ? " Click <strong>Edit</strong> to add one." : ""}</p>`
       }</div>
       <footer class="modal-foot">
         <div>${item.url ? `<a class="btn btn-ghost" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">Open on GitHub</a>` : ""}</div>
         <div>
           <button type="button" class="btn" data-action="close-modal">Close</button>
-          <button type="button" class="btn btn-primary" data-action="card-edit" data-item="${esc(item.id)}">Edit</button>
+          ${state.canEdit ? `<button type="button" class="btn btn-primary" data-action="card-edit" data-item="${esc(item.id)}">Edit</button>` : ""}
         </div>
       </footer>
     </div>`);
@@ -1176,7 +1212,7 @@ async function viewMeetings(date) {
   await loadMeetings();
   const list = allParsed();
   if (!list.length) {
-    $app.innerHTML = `<div class="empty"><h2>No meeting notes yet</h2><p>Notes live in the <code>${esc(CONFIG.meetingsDir)}/</code> folder of the repository, one file per meeting.</p><a class="btn btn-primary" href="#/meetings/new">Write the first notes</a></div>`;
+    $app.innerHTML = `<div class="empty"><h2>No meeting notes yet</h2><p>Notes live in the <code>${esc(CONFIG.meetingsDir)}/</code> folder of the repository, one file per meeting.</p>${state.canEdit ? '<a class="btn btn-primary" href="#/meetings/new">Write the first notes</a>' : ""}</div>`;
     return;
   }
   const current = list.find((m) => m.date === date) || list[0];
@@ -1188,7 +1224,7 @@ async function viewMeetings(date) {
     <aside class="m-list">
       <div class="m-list-head">
         <h2>Meetings</h2>
-        <a class="btn btn-primary btn-sm" href="#/meetings/new">New</a>
+        ${state.canEdit ? '<a class="btn btn-primary btn-sm" href="#/meetings/new">New</a>' : ""}
       </div>
       <ul>${list
         .map((m) => {
@@ -1205,7 +1241,7 @@ async function viewMeetings(date) {
         <div class="muted small">${esc(CONFIG.meetingsDir)}/${esc(current.name)}</div>
         <div class="actions">
           <a class="btn btn-sm" href="${fileUrl(current.name)}" target="_blank" rel="noopener noreferrer">View on GitHub</a>
-          <a class="btn btn-sm" href="#/meetings/${esc(current.date)}/edit" title="Notes should only be edited when strictly necessary">Edit</a>
+          ${state.canEdit ? `<a class="btn btn-sm" href="#/meetings/${esc(current.date)}/edit" title="Notes should only be edited when strictly necessary">Edit</a>` : ""}
         </div>
       </div>
       ${
@@ -1383,6 +1419,11 @@ document.addEventListener("click", async (e) => {
     openCard(el.dataset.item, "edit").catch((err) => handleError(err, "card-edit"));
   } else if (a === "card-view") {
     openCard(el.dataset.item, "view");
+  } else if (a === "show-login") {
+    renderLogin();
+  } else if (a === "show-public") {
+    e.preventDefault();
+    enterPublic();
   } else if (a === "oauth-start") {
     el.disabled = true;
     startOAuth();
@@ -1390,6 +1431,8 @@ document.addEventListener("click", async (e) => {
     route();
   } else if (a === "toggle-ai") {
     // handled on change
+  } else if (!state.canEdit && ["ai-to-board", "new-card", "archive-card", "card-edit"].includes(a)) {
+    return;
   } else if (a === "ai-to-board") {
     actionItemToBoard(el.dataset.file, el.dataset.raw, el);
   } else if (a === "new-card") {
@@ -1417,7 +1460,7 @@ document.addEventListener("click", async (e) => {
 });
 document.addEventListener("change", (e) => {
   const el = e.target;
-  if (el.dataset.action === "toggle-ai") toggleActionItem(el.dataset.file, el.dataset.raw, el.checked, el);
+  if (el.dataset.action === "toggle-ai" && state.canEdit) toggleActionItem(el.dataset.file, el.dataset.raw, el.checked, el);
   if (el.dataset.action === "board-who") {
     boardUI.who = el.value;
     viewBoard();
@@ -1464,6 +1507,7 @@ document.addEventListener("keydown", (e) => {
   if (isDemo) {
     state.client = new DemoClient();
     state.user = await state.client.me();
+    state.canEdit = true;
     renderHeader();
     return route();
   }
@@ -1494,7 +1538,7 @@ document.addEventListener("keydown", (e) => {
     }
   }
   const token = store.get(TOKEN_KEY);
-  if (!token) return renderLogin();
+  if (!token) return enterPublic();
   $app.innerHTML = loading("Signing in…");
   try {
     let remembered = false;
