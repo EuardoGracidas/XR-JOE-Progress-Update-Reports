@@ -17,6 +17,10 @@ export const CONFIG = {
   // Name of the single-select field used as the Kanban columns.
   statusField: "Status",
 
+  // Field shown under the labels on each card. Usually an Iteration field; if no field has
+  // this name, the board's first Iteration field is used.
+  sprintField: "Sprint",
+
   // Column that new cards (and action items sent to the board) go to.
   defaultColumn: "Ready",
 

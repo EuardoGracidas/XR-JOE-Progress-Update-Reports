@@ -106,6 +106,38 @@ function avatar(person, size = 22) {
 }
 const norm = (s) => String(s || "").trim().toLowerCase().replace(/\s+/g, " ");
 
+// ---------- sprints (GitHub Projects iteration field)
+function isoToDate(iso) {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+function sprintRange(sp) {
+  if (!sp || !sp.startDate || !sp.duration) return "";
+  const start = isoToDate(sp.startDate);
+  const end = new Date(start);
+  end.setDate(end.getDate() + sp.duration - 1);
+  const f = (d) => d.toLocaleDateString("en-CA", { month: "short", day: "numeric" });
+  return `${f(start)} – ${f(end)}`;
+}
+function isCurrentSprint(sp) {
+  if (!sp || !sp.startDate || !sp.duration) return false;
+  const start = isoToDate(sp.startDate);
+  const end = new Date(start);
+  end.setDate(end.getDate() + sp.duration);
+  const now = new Date();
+  return now >= start && now < end;
+}
+const sprintKey = (sp) => (sp ? sp.id || `t:${sp.title}` : "");
+function sprintBadge(sp) {
+  if (!sp) return "";
+  const cur = isCurrentSprint(sp);
+  const range = sprintRange(sp);
+  return `<div class="sprint ${cur ? "is-current" : ""}" title="${esc(range ? `${sp.title}: ${range}` : sp.title)}${cur ? " (current)" : ""}">
+    <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path fill="currentColor" d="M8 1.5a6.5 6.5 0 1 0 6.5 6.5.75.75 0 0 1 1.5 0A8 8 0 1 1 8 0a.75.75 0 0 1 0 1.5Zm2.97-.92a.75.75 0 0 1 1.02-.3 8.05 8.05 0 0 1 2.5 2.2.75.75 0 1 1-1.2.9 6.55 6.55 0 0 0-2.03-1.78.75.75 0 0 1-.29-1.02ZM8.75 4v3.69l2.28 2.28a.75.75 0 1 1-1.06 1.06l-2.5-2.5A.75.75 0 0 1 7.25 8V4a.75.75 0 0 1 1.5 0Z"/></svg>
+    <span>${esc(sp.title)}</span>${cur ? '<span class="sprint-now">current</span>' : ""}
+  </div>`;
+}
+
 let toastTimer;
 function toast(msg, kind = "ok") {
   const t = document.getElementById("toast");
@@ -507,6 +539,14 @@ async function viewOverview() {
     boardHtml = `
       <div class="bar">${counts.map(({ o, n }) => (n ? `<span class="seg c-${esc(o.color || "GRAY")}" style="flex:${n / total}" title="${esc(o.name)}: ${n}"></span>` : "")).join("")}</div>
       <ul class="legend">${counts.map(({ o, n }) => `<li><span class="dot c-${esc(o.color || "GRAY")}"></span>${esc(o.name)} <strong>${n}</strong></li>`).join("")}</ul>
+      ${(() => {
+        const sf = board.sprintField;
+        const cur = sf && (sf.options || []).find((o) => isCurrentSprint(o));
+        if (!cur) return "";
+        const inIt = board.items.filter((i) => i.sprint && i.sprint.id === cur.id);
+        const done = inIt.filter((i) => norm(opts.find((o) => o.id === i.statusId)?.name) === "done").length;
+        return `<p class="small sprint-line">${sprintBadge(cur)} <span class="muted">${esc(sprintRange(cur))} · ${done}/${inIt.length} done</span></p>`;
+      })()}
       ${
         inProg.length
           ? `<h4 class="mini-h">In progress</h4><ul class="plain">${inProg
@@ -617,7 +657,7 @@ async function actionItemToBoard(file, raw, btn) {
 }
 
 // ---------------------------------------------------------------- board
-const boardUI = { q: "", who: "" };
+const boardUI = { q: "", who: "", sprint: "" };
 
 async function viewBoard(force = false) {
   setActiveTab("board");
@@ -641,8 +681,17 @@ async function viewBoard(force = false) {
     if (boardUI.who === "__none" && i.assignees.length) return false;
     if (boardUI.who && boardUI.who !== "__none" && !i.assignees.some((p) => p.login === boardUI.who)) return false;
     if (boardUI.q && !norm(i.title + " " + i.body).includes(norm(boardUI.q))) return false;
+    if (boardUI.sprint === "__current" && !isCurrentSprint(i.sprint)) return false;
+    if (boardUI.sprint === "__none" && i.sprint) return false;
+    if (boardUI.sprint && !boardUI.sprint.startsWith("__") && sprintKey(i.sprint) !== boardUI.sprint) return false;
     return true;
   };
+  const sprintsUsed = new Map();
+  board.items.forEach((i) => i.sprint && sprintsUsed.set(sprintKey(i.sprint), i.sprint));
+  const sprintList = [...sprintsUsed.entries()].sort((a, b) =>
+    (a[1].startDate || a[1].title).localeCompare(b[1].startDate || b[1].title)
+  );
+  const hasCurrent = sprintList.some(([, sp]) => isCurrentSprint(sp));
   const cols = opts.map((o) => ({ id: o.id, name: o.name, color: o.color, description: o.description, items: board.items.filter((i) => i.statusId === o.id) }));
   const noStatus = board.items.filter((i) => !i.statusId || !opts.find((o) => o.id === i.statusId));
   if (noStatus.length) cols.unshift({ id: "", name: "No status", color: "GRAY", description: "", items: noStatus });
@@ -651,7 +700,7 @@ async function viewBoard(force = false) {
   <div class="page-head">
     <div>
       <h1>${esc(board.title)}</h1>
-      <p class="muted">Drag cards between columns, or click a card to edit it. Changes are saved to GitHub Projects.</p>
+      <p class="muted">Drag cards between columns, or click a card to open it. Changes are saved to GitHub Projects.</p>
     </div>
     <div class="actions">
       ${
@@ -673,6 +722,16 @@ async function viewBoard(force = false) {
       ${[...people.values()].map((p) => `<option value="${esc(p.login)}" ${boardUI.who === p.login ? "selected" : ""}>${esc(p.login)}</option>`).join("")}
       <option value="__none" ${boardUI.who === "__none" ? "selected" : ""}>Unassigned</option>
     </select>
+    ${
+      board.sprintField
+        ? `<select class="input" data-action="board-sprint" aria-label="Filter by ${esc(board.sprintField.name)}">
+            <option value="">All ${esc(board.sprintField.name.toLowerCase())}s</option>
+            ${hasCurrent ? `<option value="__current" ${boardUI.sprint === "__current" ? "selected" : ""}>Current ${esc(board.sprintField.name.toLowerCase())}</option>` : ""}
+            ${sprintList.map(([k, sp]) => `<option value="${esc(k)}" ${boardUI.sprint === k ? "selected" : ""}>${esc(sp.title)}${sp.startDate ? ` (${esc(sprintRange(sp))})` : ""}</option>`).join("")}
+            <option value="__none" ${boardUI.sprint === "__none" ? "selected" : ""}>No ${esc(board.sprintField.name.toLowerCase())}</option>
+          </select>`
+        : ""
+    }
   </div>
   <div class="board" style="--cols:${cols.length}">
     ${cols
@@ -709,6 +768,7 @@ function cardHtml(i) {
       <div class="kcard-top">${kind}${i.state === "CLOSED" || i.state === "MERGED" ? `<span class="kind">${esc(i.state.toLowerCase())}</span>` : ""}</div>
       <h3 class="kcard-title">${esc(i.title)}</h3>
       ${i.labels.length ? `<div class="labels">${i.labels.map((l) => `<span class="label" style="--lc:#${esc(l.color)}">${esc(l.name)}</span>`).join("")}</div>` : ""}
+      ${sprintBadge(i.sprint)}
       <div class="kcard-foot">${i.assignees.map((p) => avatar(p, 20)).join("")}${i.body ? '<span class="has-body" title="Has a description">≡</span>' : ""}</div>
     </article>`;
 }
@@ -776,28 +836,104 @@ function openModal(html) {
   if (first) first.focus();
 }
 
-async function openCard(itemId) {
+function kindLabel(item) {
+  return `<span class="kind ${item.type === "Issue" ? "kind-issue" : item.type === "PullRequest" ? "kind-pr" : ""}">${
+    item.type === "DraftIssue" ? "Draft" : item.type === "Issue" ? `Issue #${esc(item.number)}` : `PR #${esc(item.number)}`
+  }</span>`;
+}
+
+// Opens a card read-only (description rendered as Markdown); "Edit" switches to the form.
+async function openCard(itemId, mode = "view") {
   const board = state.project;
   const item = board?.items.find((i) => i.id === itemId);
   if (!item) return;
+  if (mode === "edit") return openCardEditor(item, board);
+
+  const status = board.statusField.options.find((o) => o.id === item.statusId);
+  const sf = board.sprintField;
+  const sp = item.sprint;
+  openModal(`
+    <div class="card-view">
+      <header class="modal-head">
+        <span class="cv-kind">${kindLabel(item)}${item.state === "CLOSED" || item.state === "MERGED" ? `<span class="kind">${esc(item.state.toLowerCase())}</span>` : ""}</span>
+        <button type="button" class="icon-btn" data-action="close-modal" aria-label="Close">×</button>
+      </header>
+      <h2 class="cv-title">${esc(item.title)}</h2>
+      <dl class="cv-meta">
+        <div><dt>Status</dt><dd>${status ? `<span class="dot c-${esc(status.color || "GRAY")}"></span>${esc(status.name)}` : '<span class="muted">No status</span>'}</dd></div>
+        ${
+          sf
+            ? `<div><dt>${esc(sf.name)}</dt><dd>${
+                sp
+                  ? `${esc(sp.title)}${sp.startDate ? ` <span class="muted">· ${esc(sprintRange(sp))}</span>` : ""}${isCurrentSprint(sp) ? ' <span class="sprint-now">current</span>' : ""}`
+                  : `<span class="muted">None</span>`
+              }</dd></div>`
+            : ""
+        }
+        <div><dt>Assignees</dt><dd class="cv-people">${
+          item.assignees.length
+            ? item.assignees.map((p) => `<span class="cv-person">${avatar(p, 20)} ${esc(p.login)}</span>`).join("")
+            : '<span class="muted">Nobody yet</span>'
+        }</dd></div>
+        ${
+          item.labels.length
+            ? `<div><dt>Labels</dt><dd class="labels">${item.labels.map((l) => `<span class="label" style="--lc:#${esc(l.color)}">${esc(l.name)}</span>`).join("")}</dd></div>`
+            : ""
+        }
+      </dl>
+      <div class="cv-body ${item.body.trim() ? "prose" : ""}">${
+        item.body.trim() ? md(item.body) : '<p class="muted">No description yet. Click <strong>Edit</strong> to add one.</p>'
+      }</div>
+      <footer class="modal-foot">
+        <div>${item.url ? `<a class="btn btn-ghost" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">Open on GitHub</a>` : ""}</div>
+        <div>
+          <button type="button" class="btn" data-action="close-modal">Close</button>
+          <button type="button" class="btn btn-primary" data-action="card-edit" data-item="${esc(item.id)}">Edit</button>
+        </div>
+      </footer>
+    </div>`);
+}
+
+function sprintInput(sf, sp) {
+  if (!sf) return "";
+  if (sf.type === "text" || sf.type === "number") {
+    return `<label class="field"><span>${esc(sf.name)}</span>
+      <input class="input" name="sprint" type="${sf.type === "number" ? "number" : "text"}" value="${esc(sp ? sp.title : "")}" /></label>`;
+  }
+  const cur = sprintKey(sp);
+  const opts = sf.options
+    .filter((o) => !o.completed || o.id === (sp && sp.id))
+    .map((o) => {
+      const now = isCurrentSprint(o);
+      const label = `${o.title}${o.startDate ? ` (${sprintRange(o)})` : ""}${now ? " · current" : ""}${o.completed ? " · completed" : ""}`;
+      return `<option value="${esc(o.id)}" ${o.id === cur ? "selected" : ""}>${esc(label)}</option>`;
+    })
+    .join("");
+  return `<label class="field"><span>${esc(sf.name)}</span>
+    <select class="input" name="sprint"><option value="">No ${esc(sf.name.toLowerCase())}</option>${opts}</select></label>`;
+}
+
+async function openCardEditor(item, board) {
   const collabs = await loadCollaborators();
   const editable = item.type !== "PullRequest";
   const people = mergePeople(collabs, item.assignees);
+  const sf = board.sprintField;
   openModal(`
     <form id="card-form" class="stack">
       <header class="modal-head">
-        <span class="kind ${item.type === "Issue" ? "kind-issue" : item.type === "PullRequest" ? "kind-pr" : ""}">${
-          item.type === "DraftIssue" ? "Draft" : item.type === "Issue" ? `Issue #${esc(item.number)}` : `PR #${esc(item.number)}`
-        }</span>
+        <span class="cv-kind">${kindLabel(item)}<span class="pill pill-warn">Editing</span></span>
         <button type="button" class="icon-btn" data-action="close-modal" aria-label="Close">×</button>
       </header>
       <label class="field"><span>Title</span><input class="input" name="title" value="${esc(item.title)}" ${editable ? "" : "readonly"} required /></label>
-      <label class="field"><span>Status</span>
-        <select class="input" name="status">
-          ${item.statusId ? "" : '<option value="">No status</option>'}
-          ${board.statusField.options.map((o) => `<option value="${esc(o.id)}" ${o.id === item.statusId ? "selected" : ""}>${esc(o.name)}</option>`).join("")}
-        </select>
-      </label>
+      <div class="field-row">
+        <label class="field"><span>Status</span>
+          <select class="input" name="status">
+            ${item.statusId ? "" : '<option value="">No status</option>'}
+            ${board.statusField.options.map((o) => `<option value="${esc(o.id)}" ${o.id === item.statusId ? "selected" : ""}>${esc(o.name)}</option>`).join("")}
+          </select>
+        </label>
+        ${sprintInput(sf, item.sprint)}
+      </div>
       <fieldset class="field"><legend>Assignees</legend>
         <div class="people">${
           people.length
@@ -812,20 +948,21 @@ async function openCard(itemId) {
         }</div>
       </fieldset>
       <label class="field"><span>Description <span class="muted">(Markdown)</span></span>
-        <textarea class="input" name="body" rows="7" ${editable ? "" : "readonly"}>${esc(item.body)}</textarea>
+        <textarea class="input mono" name="body" rows="9" ${editable ? "" : "readonly"}>${esc(item.body)}</textarea>
       </label>
       <footer class="modal-foot">
         <div>
           <button type="button" class="btn btn-danger-ghost" data-action="archive-card" data-item="${esc(item.id)}">Archive</button>
-          ${item.url ? `<a class="btn btn-ghost" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">Open on GitHub</a>` : ""}
         </div>
         <div>
-          <button type="button" class="btn" data-action="close-modal">Cancel</button>
+          <button type="button" class="btn" data-action="card-view" data-item="${esc(item.id)}">Cancel</button>
           <button type="submit" class="btn btn-primary">Save</button>
         </div>
       </footer>
     </form>`);
-  document.getElementById("card-form").addEventListener("submit", async (ev) => {
+  const form = document.getElementById("card-form");
+  if (editable) form.title.focus();
+  form.addEventListener("submit", async (ev) => {
     ev.preventDefault();
     const f = ev.target;
     const btn = f.querySelector('button[type="submit"]');
@@ -850,10 +987,29 @@ async function openCard(itemId) {
       if (f.status.value && f.status.value !== item.statusId) {
         await state.client.setStatus(board.id, item.id, board.statusField.id, f.status.value);
       }
-      closeModal();
+      if (sf && f.sprint) {
+        const raw = f.sprint.value.trim();
+        const before = sf.type === "text" || sf.type === "number" ? (item.sprint ? item.sprint.title : "") : item.sprint ? item.sprint.id : "";
+        if (raw !== before) {
+          let value = null;
+          if (raw) {
+            value =
+              sf.type === "iteration"
+                ? { iterationId: raw }
+                : sf.type === "single"
+                  ? { singleSelectOptionId: raw }
+                  : sf.type === "number"
+                    ? { number: Number(raw) }
+                    : { text: raw };
+          }
+          await state.client.setFieldValue(board.id, item.id, sf.id, value);
+        }
+      }
       await loadBoard(true);
       toast("Card saved to GitHub.");
-      route();
+      if (location.hash.startsWith("#/board")) await viewBoard();
+      else route();
+      openCard(item.id, "view");
     } catch (e) {
       btn.disabled = false;
       btn.textContent = "Save";
@@ -1125,6 +1281,10 @@ document.addEventListener("click", async (e) => {
       return;
     }
     signOut();
+  } else if (a === "card-edit") {
+    openCard(el.dataset.item, "edit").catch((err) => handleError(err, "card-edit"));
+  } else if (a === "card-view") {
+    openCard(el.dataset.item, "view");
   } else if (a === "oauth-start") {
     el.disabled = true;
     startOAuth();
@@ -1164,6 +1324,10 @@ document.addEventListener("change", (e) => {
     boardUI.who = el.value;
     viewBoard();
   }
+  if (el.dataset.action === "board-sprint") {
+    boardUI.sprint = el.value;
+    viewBoard();
+  }
   if (el.dataset.action === "pick-project") {
     store.set(PROJECT_KEY, el.value);
     state.project = null;
@@ -1185,7 +1349,11 @@ document.addEventListener("input", (e) => {
   }
 });
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && $modalRoot.innerHTML) closeModal();
+  if (e.key === "Escape" && $modalRoot.innerHTML) {
+    const cancel = $modalRoot.querySelector('[data-action="card-view"]');
+    if (cancel) cancel.click();
+    else closeModal();
+  }
   if (e.key === "Enter" && e.target.classList?.contains("kcard")) openCard(e.target.dataset.item);
 });
 

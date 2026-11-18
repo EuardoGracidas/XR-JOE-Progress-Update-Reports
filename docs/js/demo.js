@@ -65,26 +65,45 @@ const options = [
   { id: "o_prog", name: "In Progress", color: "YELLOW", description: "" },
   { id: "o_done", name: "Done", color: "GREEN", description: "" },
 ];
+// Two-week sprints around today so the demo always has a "current" one.
+function isoDaysFromToday(n) {
+  const d = new Date();
+  d.setDate(d.getDate() + n);
+  const p = (x) => String(x).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+const sprints = [
+  { id: "it1", title: "Sprint 1", startDate: isoDaysFromToday(-19), duration: 14, completed: true },
+  { id: "it2", title: "Sprint 2", startDate: isoDaysFromToday(-5), duration: 14, completed: false },
+  { id: "it3", title: "Sprint 3", startDate: isoDaysFromToday(9), duration: 14, completed: false },
+];
+const sprintField = { id: "F_sprint", name: "Sprint", type: "iteration", options: sprints };
+const sp = (id) => {
+  const o = sprints.find((x) => x.id === id);
+  return o ? { id: o.id, title: o.title, startDate: o.startDate, duration: o.duration } : null;
+};
 let itemCounter = 1;
 const items = [
-  ["Set up Unity project for XR prototype", "o_done", [people[0]], "DraftIssue"],
-  ["Book the lab headset for testing", "o_prog", [people[2]], "DraftIssue"],
-  ["Literature review: XR collaboration", "o_ready", [people[0]], "Issue"],
-  ["Hand tracking support", "o_back", [], "DraftIssue"],
-  ["Prototype v2 with shared scene", "o_ready", [], "DraftIssue"],
-].map(([title, statusId, assignees, type]) => ({
+  ["Set up Unity project for XR prototype", "o_done", [people[0]], "DraftIssue", "it1", "Scene with **OpenXR** and the lab headset profile."],
+  ["Book the lab headset for testing", "o_prog", [people[2]], "DraftIssue", "it2", ""],
+  ["Literature review: XR collaboration", "o_ready", [people[0]], "Issue", "it2",
+    "**Goal:** summarise 5 key papers.\n\n**Done when:**\n- [x] Pick the papers\n- [ ] One-page summary\n- [ ] Share with supervisors\n\nSee the [meeting notes](#/meetings)."],
+  ["Hand tracking support", "o_back", [], "DraftIssue", null, ""],
+  ["Prototype v2 with shared scene", "o_ready", [], "DraftIssue", "it3", ""],
+].map(([title, statusId, assignees, type, sprintId, body]) => ({
   id: `I_${itemCounter}`,
   contentId: `C_${itemCounter++}`,
   statusId,
   title,
-  body: "",
+  body,
+  sprint: sp(sprintId),
   type,
   url: type === "Issue" ? "https://github.com" : null,
   number: type === "Issue" ? 3 : null,
   state: type === "Issue" ? "OPEN" : null,
   repo: type === "Issue" ? `${CONFIG.owner}/${CONFIG.repo}` : null,
   assignees,
-  labels: [],
+  labels: type === "Issue" ? [{ name: "Thesis", color: "3fb950" }] : [],
   updatedAt: new Date().toISOString(),
 }));
 
@@ -143,12 +162,17 @@ export class DemoClient {
       url: "#",
       number: 1,
       statusField: { id: "F_status", name: "Status", options },
+      sprintField,
       items: items.map((i) => ({ ...i, assignees: [...i.assignees] })),
     };
   }
   async setStatus(_p, itemId, _f, optionId) {
     await wait();
     items.find((i) => i.id === itemId).statusId = optionId;
+  }
+  async setFieldValue(_p, itemId, _f, value) {
+    await wait();
+    items.find((i) => i.id === itemId).sprint = value ? sp(value.iterationId) : null;
   }
   async addDraft(_p, title, body, assigneeIds = []) {
     await wait();
@@ -157,6 +181,7 @@ export class DemoClient {
       id,
       contentId: `C_${itemCounter++}`,
       statusId: null,
+      sprint: null,
       title,
       body: body || "",
       type: "DraftIssue",

@@ -31,6 +31,12 @@ const ITEM_FIELDS = `
   fieldValueByName(name: $status) {
     ... on ProjectV2ItemFieldSingleSelectValue { optionId name }
   }
+  fieldValues(first: 30) { nodes {
+    ... on ProjectV2ItemFieldIterationValue { iterationId title startDate duration field { ... on ProjectV2IterationField { id } } }
+    ... on ProjectV2ItemFieldSingleSelectValue { optionId name field { ... on ProjectV2SingleSelectField { id } } }
+    ... on ProjectV2ItemFieldTextValue { text field { ... on ProjectV2Field { id } } }
+    ... on ProjectV2ItemFieldNumberValue { number field { ... on ProjectV2Field { id } } }
+  } }
   content {
     __typename
     ... on DraftIssue { id title body assignees(first: 10) { nodes { id login avatarUrl } } }
@@ -172,7 +178,13 @@ export class GitHubClient {
     const q = `query($id: ID!, $cursor: String, $status: String!) {
       node(id: $id) { ... on ProjectV2 {
         id title url number
-        fields(first: 50) { nodes { ... on ProjectV2SingleSelectField { id name options { id name color description } } } }
+        fields(first: 50) { nodes {
+          ... on ProjectV2SingleSelectField { id name dataType options { id name color description } }
+          ... on ProjectV2IterationField { id name dataType configuration {
+            iterations { id title startDate duration }
+            completedIterations { id title startDate duration } } }
+          ... on ProjectV2Field { id name dataType }
+        } }
         items(first: 100, after: $cursor) { pageInfo { hasNextPage endCursor } nodes { ${ITEM_FIELDS} } }
       } }
     }`;
@@ -192,13 +204,15 @@ export class GitHubClient {
       (f) => f && f.name && f.name.toLowerCase() === CONFIG.statusField.toLowerCase() && f.options
     );
     if (!statusField) throw new GitHubError(`The board has no single-select field called "${CONFIG.statusField}"`, 400);
+    const sprintField = findSprintField(project.fields.nodes || []);
     return {
       id: project.id,
       title: project.title,
       url: project.url,
       number: project.number,
       statusField,
-      items: items.filter((i) => !i.isArchived && i.content).map(normalizeItem),
+      sprintField,
+      items: items.filter((i) => !i.isArchived && i.content).map((i) => normalizeItem(i, sprintField)),
     };
   }
 
@@ -209,6 +223,22 @@ export class GitHubClient {
       }
     }`;
     await this.graphql(q, { p: projectId, i: itemId, f: fieldId, o: optionId });
+  }
+
+  // Sets any project field. `value` is a ProjectV2FieldValue, e.g. { iterationId }, { singleSelectOptionId },
+  // { text } or { number }; null clears the field.
+  async setFieldValue(projectId, itemId, fieldId, value) {
+    if (value === null) {
+      const q = `mutation($p: ID!, $i: ID!, $f: ID!) {
+        clearProjectV2ItemFieldValue(input: { projectId: $p, itemId: $i, fieldId: $f }) { projectV2Item { id } }
+      }`;
+      await this.graphql(q, { p: projectId, i: itemId, f: fieldId });
+      return;
+    }
+    const q = `mutation($p: ID!, $i: ID!, $f: ID!, $v: ProjectV2FieldValue!) {
+      updateProjectV2ItemFieldValue(input: { projectId: $p, itemId: $i, fieldId: $f, value: $v }) { projectV2Item { id } }
+    }`;
+    await this.graphql(q, { p: projectId, i: itemId, f: fieldId, v: value });
   }
 
   async addDraft(projectId, title, body, assigneeIds = []) {
@@ -247,9 +277,45 @@ function encodePath(path) {
   return path.split("/").map(encodeURIComponent).join("/");
 }
 
-function normalizeItem(i) {
+// The "Sprint" field: an Iteration field named CONFIG.sprintField (or the first Iteration field),
+// or a single-select / text / number field with that name. Returns null when the board has none.
+function findSprintField(fields) {
+  const wanted = (CONFIG.sprintField || "Sprint").toLowerCase();
+  const named = fields.find((f) => f && f.name && f.name.toLowerCase() === wanted);
+  const field = named || fields.find((f) => f && f.dataType === "ITERATION");
+  if (!field) return null;
+  if (field.dataType === "ITERATION") {
+    const cfg = field.configuration || {};
+    const opts = [
+      ...(cfg.iterations || []).map((it) => ({ ...it, completed: false })),
+      ...(cfg.completedIterations || []).map((it) => ({ ...it, completed: true })),
+    ].sort((a, b) => a.startDate.localeCompare(b.startDate));
+    return { id: field.id, name: field.name, type: "iteration", options: opts };
+  }
+  if (field.options) {
+    return { id: field.id, name: field.name, type: "single", options: field.options.map((o) => ({ id: o.id, title: o.name })) };
+  }
+  if (field.dataType === "TEXT" || field.dataType === "NUMBER") {
+    return { id: field.id, name: field.name, type: field.dataType === "TEXT" ? "text" : "number", options: [] };
+  }
+  return null;
+}
+
+function sprintValue(i, sprintField) {
+  if (!sprintField) return null;
+  const v = (i.fieldValues?.nodes || []).find((n) => n && n.field && n.field.id === sprintField.id);
+  if (!v) return null;
+  if (v.iterationId) return { id: v.iterationId, title: v.title, startDate: v.startDate, duration: v.duration };
+  if (v.optionId) return { id: v.optionId, title: v.name };
+  if (v.text != null && v.text !== "") return { id: null, title: v.text };
+  if (v.number != null) return { id: null, title: String(v.number) };
+  return null;
+}
+
+function normalizeItem(i, sprintField) {
   const c = i.content;
   return {
+    sprint: sprintValue(i, sprintField),
     id: i.id,
     updatedAt: i.updatedAt,
     statusId: i.fieldValueByName ? i.fieldValueByName.optionId : null,
