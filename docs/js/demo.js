@@ -82,6 +82,11 @@ const sp = (id) => {
   const o = sprints.find((x) => x.id === id);
   return o ? { id: o.id, title: o.title, startDate: o.startDate, duration: o.duration } : null;
 };
+const milestones = [
+  { id: "M_fall", number: 1, title: "Fall 2026 Semester", dueOn: isoDaysFromToday(31), state: "OPEN", url: "#" },
+  { id: "M_winter", number: 2, title: "Winter 2027 semester", dueOn: isoDaysFromToday(157), state: "OPEN", url: "#" },
+];
+const ms = (id) => (id ? { ...milestones.find((m) => m.id === id) } : null);
 let itemCounter = 1;
 const items = [
   ["Set up Unity project for XR prototype", "o_done", [people[0]], "DraftIssue", "it1", "Scene with **OpenXR** and the lab headset profile."],
@@ -89,8 +94,9 @@ const items = [
   ["Literature review: XR collaboration", "o_ready", [people[0]], "Issue", "it2",
     "**Goal:** summarise 5 key papers.\n\n**Done when:**\n- [x] Pick the papers\n- [ ] One-page summary\n- [ ] Share with supervisors\n\nSee the [meeting notes](#/meetings)."],
   ["Hand tracking support", "o_back", [], "DraftIssue", null, ""],
-  ["Prototype v2 with shared scene", "o_ready", [], "DraftIssue", "it3", ""],
-].map(([title, statusId, assignees, type, sprintId, body]) => ({
+  ["Prototype v2 with shared scene", "o_ready", [], "Issue", "it3", ""],
+].map(([title, statusId, assignees, type, sprintId, body], idx) => ({
+  milestone: type === "Issue" ? ms(idx === 2 ? "M_fall" : "M_winter") : null,
   id: `I_${itemCounter}`,
   contentId: `C_${itemCounter++}`,
   statusId,
@@ -99,7 +105,7 @@ const items = [
   sprint: sp(sprintId),
   type,
   url: type === "Issue" ? "https://github.com" : null,
-  number: type === "Issue" ? 3 : null,
+  number: type === "Issue" ? 3 + itemCounter : null,
   state: type === "Issue" ? "OPEN" : null,
   repo: type === "Issue" ? `${CONFIG.owner}/${CONFIG.repo}` : null,
   assignees,
@@ -200,10 +206,14 @@ export class DemoClient {
     const it = items.find((i) => i.contentId === draftId);
     Object.assign(it, { title, body, assignees: people.filter((p) => assigneeIds.includes(p.id)) });
   }
-  async updateIssue(_repo, number, { title, body, assignees }) {
+  async updateIssue(_repo, number, { title, body, assignees, milestone }) {
     await wait();
     const it = items.find((i) => i.number === number);
     Object.assign(it, { title, body, assignees: people.filter((p) => assignees.includes(p.login)) });
+    if (milestone !== undefined) it.milestone = milestone ? { ...milestones.find((m) => m.number === milestone) } : null;
+  }
+  async listMilestones() {
+    return milestones.map((m) => ({ ...m }));
   }
   async archiveItem(_p, itemId) {
     await wait();

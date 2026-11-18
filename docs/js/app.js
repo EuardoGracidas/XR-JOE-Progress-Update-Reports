@@ -127,6 +127,36 @@ function isCurrentSprint(sp) {
   const now = new Date();
   return now >= start && now < end;
 }
+// ---------- milestones (the repo's semester milestones)
+// "Current" = the open milestone with the nearest due date that hasn't passed yet.
+function currentMilestoneId(items) {
+  const today = todayISO();
+  const ms = new Map();
+  items.forEach((i) => i.milestone && ms.set(i.milestone.id, i.milestone));
+  const upcoming = [...ms.values()]
+    .filter((m) => m.state !== "CLOSED" && m.dueOn && m.dueOn >= today)
+    .sort((a, b) => a.dueOn.localeCompare(b.dueOn));
+  return upcoming.length ? upcoming[0].id : null;
+}
+function milestoneDue(m) {
+  if (!m || !m.dueOn) return "";
+  return isoToDate(m.dueOn).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" });
+}
+function milestoneBadge(m, currentId) {
+  if (!m) return "";
+  const cur = m.id === currentId;
+  const due = milestoneDue(m);
+  return `<div class="sprint milestone ${cur ? "is-current" : ""}" title="${esc(m.title)}${due ? ` · due ${esc(due)}` : ""}${cur ? " (current)" : ""}">
+    <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path fill="currentColor" d="M7.75 0a.75.75 0 0 1 .75.75V3h3.634c.414 0 .814.147 1.13.414l2.07 1.75a1.75 1.75 0 0 1 0 2.672l-2.07 1.75a1.75 1.75 0 0 1-1.13.414H8.5v5.25a.75.75 0 0 1-1.5 0V10H2.75A1.75 1.75 0 0 1 1 8.25v-3.5C1 3.784 1.784 3 2.75 3H7V.75A.75.75 0 0 1 7.75 0Zm4.384 8.5a.25.25 0 0 0 .161-.06l2.07-1.75a.248.248 0 0 0 0-.38l-2.07-1.75a.25.25 0 0 0-.161-.06H2.75a.25.25 0 0 0-.25.25v3.5c0 .138.112.25.25.25h9.384Z"/></svg>
+    <span>${esc(m.title)}</span>${cur ? '<span class="sprint-now">current</span>' : ""}
+  </div>`;
+}
+const milestoneCache = new Map(); // repo -> open milestones
+async function milestonesFor(repo) {
+  if (!milestoneCache.has(repo)) milestoneCache.set(repo, await state.client.listMilestones(repo));
+  return milestoneCache.get(repo);
+}
+
 const sprintKey = (sp) => (sp ? sp.id || `t:${sp.title}` : "");
 function sprintBadge(sp) {
   if (!sp) return "";
@@ -540,12 +570,21 @@ async function viewOverview() {
       <div class="bar">${counts.map(({ o, n }) => (n ? `<span class="seg c-${esc(o.color || "GRAY")}" style="flex:${n / total}" title="${esc(o.name)}: ${n}"></span>` : "")).join("")}</div>
       <ul class="legend">${counts.map(({ o, n }) => `<li><span class="dot c-${esc(o.color || "GRAY")}"></span>${esc(o.name)} <strong>${n}</strong></li>`).join("")}</ul>
       ${(() => {
+        const curId = currentMilestoneId(board.items);
+        if (!curId) return "";
+        const inIt = board.items.filter((i) => i.milestone && i.milestone.id === curId);
+        const m = inIt[0].milestone;
+        const done = inIt.filter((i) => norm(opts.find((o) => o.id === i.statusId)?.name) === "done").length;
+        const left = daysUntil(m.dueOn);
+        return `<div class="small sprint-line">${milestoneBadge(m, curId)} <span class="muted">due ${esc(milestoneDue(m))} (${esc(relDays(left))}) · ${done}/${inIt.length} done</span></div>`;
+      })()}
+      ${(() => {
         const sf = board.sprintField;
         const cur = sf && (sf.options || []).find((o) => isCurrentSprint(o));
         if (!cur) return "";
         const inIt = board.items.filter((i) => i.sprint && i.sprint.id === cur.id);
         const done = inIt.filter((i) => norm(opts.find((o) => o.id === i.statusId)?.name) === "done").length;
-        return `<p class="small sprint-line">${sprintBadge(cur)} <span class="muted">${esc(sprintRange(cur))} · ${done}/${inIt.length} done</span></p>`;
+        return `<div class="small sprint-line">${sprintBadge(cur)} <span class="muted">${esc(sprintRange(cur))} · ${done}/${inIt.length} done</span></div>`;
       })()}
       ${
         inProg.length
@@ -657,7 +696,7 @@ async function actionItemToBoard(file, raw, btn) {
 }
 
 // ---------------------------------------------------------------- board
-const boardUI = { q: "", who: "", sprint: "" };
+const boardUI = { q: "", who: "", sprint: "", milestone: "" };
 
 async function viewBoard(force = false) {
   setActiveTab("board");
@@ -681,6 +720,9 @@ async function viewBoard(force = false) {
     if (boardUI.who === "__none" && i.assignees.length) return false;
     if (boardUI.who && boardUI.who !== "__none" && !i.assignees.some((p) => p.login === boardUI.who)) return false;
     if (boardUI.q && !norm(i.title + " " + i.body).includes(norm(boardUI.q))) return false;
+    if (boardUI.milestone === "__current" && !(i.milestone && i.milestone.id === currentMilestoneId(board.items))) return false;
+    if (boardUI.milestone === "__none" && i.milestone) return false;
+    if (boardUI.milestone && !boardUI.milestone.startsWith("__") && (!i.milestone || i.milestone.id !== boardUI.milestone)) return false;
     if (boardUI.sprint === "__current" && !isCurrentSprint(i.sprint)) return false;
     if (boardUI.sprint === "__none" && i.sprint) return false;
     if (boardUI.sprint && !boardUI.sprint.startsWith("__") && sprintKey(i.sprint) !== boardUI.sprint) return false;
@@ -692,6 +734,10 @@ async function viewBoard(force = false) {
     (a[1].startDate || a[1].title).localeCompare(b[1].startDate || b[1].title)
   );
   const hasCurrent = sprintList.some(([, sp]) => isCurrentSprint(sp));
+  const curMilestone = currentMilestoneId(board.items);
+  const msUsed = new Map();
+  board.items.forEach((i) => i.milestone && msUsed.set(i.milestone.id, i.milestone));
+  const msList = [...msUsed.values()].sort((a, b) => (a.dueOn || "9999").localeCompare(b.dueOn || "9999"));
   const cols = opts.map((o) => ({ id: o.id, name: o.name, color: o.color, description: o.description, items: board.items.filter((i) => i.statusId === o.id) }));
   const noStatus = board.items.filter((i) => !i.statusId || !opts.find((o) => o.id === i.statusId));
   if (noStatus.length) cols.unshift({ id: "", name: "No status", color: "GRAY", description: "", items: noStatus });
@@ -723,6 +769,16 @@ async function viewBoard(force = false) {
       <option value="__none" ${boardUI.who === "__none" ? "selected" : ""}>Unassigned</option>
     </select>
     ${
+      msList.length
+        ? `<select class="input" data-action="board-milestone" aria-label="Filter by milestone">
+            <option value="">All milestones</option>
+            ${curMilestone ? `<option value="__current" ${boardUI.milestone === "__current" ? "selected" : ""}>Current milestone</option>` : ""}
+            ${msList.map((m) => `<option value="${esc(m.id)}" ${boardUI.milestone === m.id ? "selected" : ""}>${esc(m.title)}</option>`).join("")}
+            <option value="__none" ${boardUI.milestone === "__none" ? "selected" : ""}>No milestone</option>
+          </select>`
+        : ""
+    }
+    ${
       board.sprintField
         ? `<select class="input" data-action="board-sprint" aria-label="Filter by ${esc(board.sprintField.name)}">
             <option value="">All ${esc(board.sprintField.name.toLowerCase())}s</option>
@@ -746,7 +802,7 @@ async function viewBoard(force = false) {
         </header>
         ${c.description ? `<p class="col-desc">${esc(c.description)}</p>` : ""}
         <div class="col-body" data-drop="${esc(c.id)}">
-          ${visible.map(cardHtml).join("") || '<p class="col-empty">No cards</p>'}
+          ${visible.map((i) => cardHtml(i, curMilestone)).join("") || '<p class="col-empty">No cards</p>'}
         </div>
         ${c.id ? `<button class="add-inline" data-action="new-card" data-col="${esc(c.id)}">+ Add card</button>` : ""}
       </section>`;
@@ -756,7 +812,7 @@ async function viewBoard(force = false) {
   wireDragAndDrop();
 }
 
-function cardHtml(i) {
+function cardHtml(i, curMilestone = null) {
   const kind =
     i.type === "Issue"
       ? `<span class="kind kind-issue">Issue #${esc(i.number)}</span>`
@@ -768,7 +824,7 @@ function cardHtml(i) {
       <div class="kcard-top">${kind}${i.state === "CLOSED" || i.state === "MERGED" ? `<span class="kind">${esc(i.state.toLowerCase())}</span>` : ""}</div>
       <h3 class="kcard-title">${esc(i.title)}</h3>
       ${i.labels.length ? `<div class="labels">${i.labels.map((l) => `<span class="label" style="--lc:#${esc(l.color)}">${esc(l.name)}</span>`).join("")}</div>` : ""}
-      ${sprintBadge(i.sprint)}
+      ${milestoneBadge(i.milestone, curMilestone)}${sprintBadge(i.sprint)}
       <div class="kcard-foot">${i.assignees.map((p) => avatar(p, 20)).join("")}${i.body ? '<span class="has-body" title="Has a description">≡</span>' : ""}</div>
     </article>`;
 }
@@ -870,6 +926,17 @@ async function openCard(itemId, mode = "view") {
               }</dd></div>`
             : ""
         }
+        ${
+          item.type !== "DraftIssue"
+            ? `<div><dt>Milestone</dt><dd>${
+                item.milestone
+                  ? `${item.milestone.url ? `<a href="${esc(item.milestone.url)}" target="_blank" rel="noopener noreferrer">${esc(item.milestone.title)}</a>` : esc(item.milestone.title)}${
+                      item.milestone.dueOn ? ` <span class="muted">· due ${esc(milestoneDue(item.milestone))}</span>` : ""
+                    }${item.milestone.id === currentMilestoneId(board.items) ? ' <span class="sprint-now">current</span>' : ""}`
+                  : '<span class="muted">None</span>'
+              }</dd></div>`
+            : ""
+        }
         <div><dt>Assignees</dt><dd class="cv-people">${
           item.assignees.length
             ? item.assignees.map((p) => `<span class="cv-person">${avatar(p, 20)} ${esc(p.login)}</span>`).join("")
@@ -918,6 +985,28 @@ async function openCardEditor(item, board) {
   const editable = item.type !== "PullRequest";
   const people = mergePeople(collabs, item.assignees);
   const sf = board.sprintField;
+  let milestones = null;
+  if (item.type === "Issue" && item.repo) {
+    try {
+      milestones = await milestonesFor(item.repo);
+    } catch {
+      milestones = null; // no access to milestones: keep the field out of the form
+    }
+  }
+  const msOptions = milestones
+    ? [...milestones, ...(item.milestone && !milestones.some((m) => m.id === item.milestone.id) ? [item.milestone] : [])]
+    : [];
+  const milestoneInput = milestones
+    ? `<label class="field"><span>Milestone</span>
+        <select class="input" name="milestone"><option value="">No milestone</option>${msOptions
+          .map(
+            (m) =>
+              `<option value="${esc(m.number)}" ${item.milestone && item.milestone.id === m.id ? "selected" : ""}>${esc(m.title)}${
+                m.dueOn ? ` (due ${esc(milestoneDue(m))})` : ""
+              }${m.state === "CLOSED" ? " · closed" : ""}</option>`
+          )
+          .join("")}</select></label>`
+    : "";
   openModal(`
     <form id="card-form" class="stack">
       <header class="modal-head">
@@ -932,6 +1021,7 @@ async function openCardEditor(item, board) {
             ${board.statusField.options.map((o) => `<option value="${esc(o.id)}" ${o.id === item.statusId ? "selected" : ""}>${esc(o.name)}</option>`).join("")}
           </select>
         </label>
+        ${milestoneInput}
         ${sprintInput(sf, item.sprint)}
       </div>
       <fieldset class="field"><legend>Assignees</legend>
@@ -972,16 +1062,24 @@ async function openCardEditor(item, board) {
       const title = f.title.value.trim();
       const body = f.body.value;
       const checked = [...f.querySelectorAll('input[name="assignee"]:checked')];
+      const msBefore = item.milestone ? String(item.milestone.number) : "";
+      const msAfter = f.milestone ? f.milestone.value : msBefore;
       const changedContent =
         editable &&
         (title !== item.title ||
           body !== item.body ||
+          msAfter !== msBefore ||
           checked.map((c) => c.dataset.login).sort().join() !== item.assignees.map((a) => a.login).sort().join());
       if (changedContent) {
         if (item.type === "DraftIssue") {
           await state.client.updateDraft(item.contentId, title, body, checked.map((c) => c.value));
         } else if (item.type === "Issue") {
-          await state.client.updateIssue(item.repo, item.number, { title, body, assignees: checked.map((c) => c.dataset.login) });
+          await state.client.updateIssue(item.repo, item.number, {
+            title,
+            body,
+            assignees: checked.map((c) => c.dataset.login),
+            milestone: msAfter === msBefore ? undefined : msAfter ? Number(msAfter) : null,
+          });
         }
       }
       if (f.status.value && f.status.value !== item.statusId) {
@@ -1322,6 +1420,10 @@ document.addEventListener("change", (e) => {
   if (el.dataset.action === "toggle-ai") toggleActionItem(el.dataset.file, el.dataset.raw, el.checked, el);
   if (el.dataset.action === "board-who") {
     boardUI.who = el.value;
+    viewBoard();
+  }
+  if (el.dataset.action === "board-milestone") {
+    boardUI.milestone = el.value;
     viewBoard();
   }
   if (el.dataset.action === "board-sprint") {

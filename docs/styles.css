@@ -258,7 +258,7 @@ textarea.input { resize: vertical; }
 .kcard-foot:empty { margin-top: 0; }
 .has-body { margin-left: auto; color: var(--muted); font-size: 13px; }
 .sprint {
-  display: inline-flex; align-items: center; gap: 5px; margin-top: 7px;
+  display: flex; width: fit-content; align-items: center; gap: 5px; margin-top: 7px;
   font-size: 12px; font-weight: 500; color: var(--muted);
 }
 .sprint svg { flex: none; opacity: 0.85; }
@@ -269,6 +269,7 @@ textarea.input { resize: vertical; }
 }
 .sprint-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 10px 0 0; }
 .sprint-line .sprint { margin-top: 0; }
+.sprint + .sprint { margin-top: 4px; }
 .labels { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
 .label { font-size: 11px; font-weight: 600; padding: 0 7px; border-radius: 999px; border: 1px solid var(--lc); color: var(--text); background: color-mix(in srgb, var(--lc) 18%, transparent); }
 

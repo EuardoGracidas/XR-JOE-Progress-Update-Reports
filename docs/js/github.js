@@ -42,9 +42,11 @@ const ITEM_FIELDS = `
     ... on DraftIssue { id title body assignees(first: 10) { nodes { id login avatarUrl } } }
     ... on Issue { id number title body url issueState: state repository { nameWithOwner }
       assignees(first: 10) { nodes { id login avatarUrl } }
-      labels(first: 10) { nodes { name color } } }
+      labels(first: 10) { nodes { name color } }
+      milestone { id number title dueOn state url } }
     ... on PullRequest { id number title body url prState: state repository { nameWithOwner }
-      assignees(first: 10) { nodes { id login avatarUrl } } }
+      assignees(first: 10) { nodes { id login avatarUrl } }
+      milestone { id number title dueOn state url } }
   }`;
 
 export class GitHubClient {
@@ -258,11 +260,24 @@ export class GitHubClient {
     await this.graphql(q, { d: draftId, t: title, b: body, a: assigneeIds });
   }
 
-  async updateIssue(repoFullName, number, { title, body, assignees }) {
-    await this.rest(`/repos/${repoFullName}/issues/${number}`, {
-      method: "PATCH",
-      body: { title, body, assignees },
-    });
+  // `milestone`: milestone number, null to remove it, or undefined to leave it as is.
+  async updateIssue(repoFullName, number, { title, body, assignees, milestone }) {
+    const patch = { title, body, assignees };
+    if (milestone !== undefined) patch.milestone = milestone;
+    await this.rest(`/repos/${repoFullName}/issues/${number}`, { method: "PATCH", body: patch });
+  }
+
+  // Open milestones of a repository ("owner/name"), soonest due first.
+  async listMilestones(repoFullName) {
+    const list = await this.rest(`/repos/${repoFullName}/milestones?state=open&sort=due_on&direction=asc&per_page=100`);
+    return list.map((m) => ({
+      id: m.node_id,
+      number: m.number,
+      title: m.title,
+      dueOn: m.due_on ? m.due_on.slice(0, 10) : null,
+      state: "OPEN",
+      url: m.html_url,
+    }));
   }
 
   async archiveItem(projectId, itemId) {
@@ -329,5 +344,15 @@ function normalizeItem(i, sprintField) {
     repo: c.repository ? c.repository.nameWithOwner : null,
     assignees: (c.assignees?.nodes || []).filter(Boolean),
     labels: (c.labels?.nodes || []).filter(Boolean),
+    milestone: c.milestone
+      ? {
+          id: c.milestone.id,
+          number: c.milestone.number,
+          title: c.milestone.title,
+          dueOn: c.milestone.dueOn ? c.milestone.dueOn.slice(0, 10) : null,
+          state: c.milestone.state,
+          url: c.milestone.url,
+        }
+      : null,
   };
 }
