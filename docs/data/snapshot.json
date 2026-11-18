@@ -1,5 +1,5 @@
 {
- "updatedAt": "2026-11-18T22:34:11.234Z",
+ "updatedAt": "2026-11-18T22:34:37.580Z",
  "project": {
   "id": "PVT_kwHODkIbLc4BqYao",
   "number": 3,
@@ -307,7 +307,7 @@
    {
     "sprint": null,
     "id": "PVTI_lAHODkIbLc4BqYaozhJrNU4",
-    "updatedAt": "2026-11-18T17:05:20Z",
+    "updatedAt": "2026-11-18T22:34:13Z",
     "statusId": "61e4505c",
     "type": "Issue",
     "contentId": "I_kwDOVkaXns8AAAABgOM5vQ",
@@ -331,12 +331,12 @@
      }
     ],
     "milestone": {
-     "id": "MI_kwDOVkaXns4BK6_C",
-     "number": 1,
-     "title": "Fall 2026 Semester",
-     "dueOn": "2026-12-18",
+     "id": "MI_kwDOVkaXns4BK6_O",
+     "number": 2,
+     "title": "Winter 2027 semester",
+     "dueOn": "2027-04-23",
      "state": "OPEN",
-     "url": "https://github.com/EuardoGracidas/XR-JOE-Progress-Update-Reports/milestone/1"
+     "url": "https://github.com/EuardoGracidas/XR-JOE-Progress-Update-Reports/milestone/2"
     }
    },
    {
