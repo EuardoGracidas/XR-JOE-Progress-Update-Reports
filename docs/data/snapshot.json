@@ -1,0 +1,418 @@
+{
+ "updatedAt": "2026-11-18T21:35:44.099Z",
+ "project": {
+  "id": "PVT_kwHODkIbLc4BqYao",
+  "number": 3,
+  "title": "@XR-JOE"
+ },
+ "board": {
+  "id": "PVT_kwHODkIbLc4BqYao",
+  "title": "@XR-JOE",
+  "url": "https://github.com/users/EuardoGracidas/projects/3",
+  "number": 3,
+  "statusField": {
+   "id": "PVTSSF_lAHODkIbLc4BqYaozhovzG4",
+   "name": "Status",
+   "dataType": "SINGLE_SELECT",
+   "options": [
+    {
+     "id": "f75ad846",
+     "name": "Backlog",
+     "color": "GREEN",
+     "description": "This item hasn't been started"
+    },
+    {
+     "id": "61e4505c",
+     "name": "Ready",
+     "color": "BLUE",
+     "description": "This is ready to be picked up"
+    },
+    {
+     "id": "47fc9ee4",
+     "name": "In progress",
+     "color": "YELLOW",
+     "description": "This is actively being worked on"
+    },
+    {
+     "id": "df73e18b",
+     "name": "In review",
+     "color": "PURPLE",
+     "description": "This item is in review"
+    },
+    {
+     "id": "98236657",
+     "name": "Done",
+     "color": "ORANGE",
+     "description": "This has been completed"
+    }
+   ]
+  },
+  "sprintField": null,
+  "items": [
+   {
+    "sprint": null,
+    "id": "PVTI_lAHODkIbLc4BqYaozhJrcuE",
+    "updatedAt": "2026-11-18T01:43:22Z",
+    "statusId": "47fc9ee4",
+    "type": "Issue",
+    "contentId": "I_kwDOVkaXns8AAAABgOdQTw",
+    "title": "COMP-6905-001 (Software Engineering)",
+    "body": "## Course Overview\n- **Instructor:** Dr. E. Brown\n\n## Current Status (Week 11 — Nov 17, 2026)\nCurrently covering **GUI design and testing**, while working on **Sprint 3**, the final project iteration.\n\n### Completed\n- [x] Topics: Git source control strategy, agile process models, APIs and interfaces, data persistence and architecture design, unit testing, JavaScript extras, design patterns, SOLID principles, requirements and user stories\n- [x] Assignments 1–8\n- [x] Project Part 1 — Sprint 1\n- [x] Project Part 2 — Sprint 2 (Oct 29)\n\n## Grades\n### Assignments (16%)\n| Assignment | Points | Grade | \n|------------|--------|-------|\n| 1 | 2 / 2 | 100% | \n| 2 | 2 / 2 | 100% | \n| 3 | 2 / 2 | 100% |\n| 4 | 2 / 2 | 100% | \n| 5 | 2 / 2 | 100% | \n| 6 | 2 / 2 | 100% | \n| 7 | — | Pending | \n| 8 | — | Pending | \n| **Total** | **12 / 16 graded** | **75%** |\n\n### Project (84%)\n| Sprint | Individual | Team | Weight Achieved |\n|--------|------------|------|-----------------|\n| Sprint 1 | 26 / 30 (86.67%) | 33 / 40 (82.5%) | 8.46 / 10 |\n| Sprint 2 | 65 / 65 (100%) | 76 / 80 (95%) | 23.4 / 24 |\n| Sprint 3 | Pending | Pending | — / 50 |\n\n**Current standing:** 43.86 out of 46 graded weight (≈95.3%)\n\n## Upcoming: Project Part 3 (Sprint 3) — Monday, Dec 7\n**Weight:** 50% of the final grade (25% individual, 25% team)\n**Scope:** carried-over work, multiple simultaneous users, a comprehensive app, and new features from each member's user story\n\n### Sprint 3 checklist\n- [x] User story and goal statements (`doc/userstories/egracidasrey.md`)\n- [x] G1: Search companies by name\n- [ ] G2: Company name next to ticker (in review)\n- [ ] G5: Company information and G7: 3-year price summary (draft PR)\n- [ ] Database requests from teammates (requests close Nov 18, implementation due Nov 22)\n- [ ] Database test cleanup R8/R9 (Nov 24)\n- [ ] Multiple simultaneous users, with Prajeet (Nov 28)\n- [ ] `doc/architecture.md`, including how simultaneous users are supported (Dec 5)\n- [ ] `doc/user_manual.md` (Dec 5)\n- [ ] Pending PR reviews\n- [ ] Performance reviews (Sprint 3 section) and response to Sprint 2 reviews\n- [ ] Position paper `doc/position/egracidasrey.md` (600–2000 words)\n- [ ] Attributions file up to date\n- [ ] G4: Savings comparison and G6: Portfolio allocation (Could)\n\n## Next\n- [ ] Nov 18: Database requests close + team meeting (8 p.m.)\n- [ ] Nov 19: GUI design and testing\n- [ ] Nov 24–26: DevOps\n- [ ] Dec 1–3: Additional tools\n- [ ] Dec 4: Code freeze\n- [ ] Dec 7: Sprint 3 submission\n\n## Notes\nThe course schedule is tentative and the course page is updated regularly, so re-check the Sprint 3 instructions and marking schemes before submission. Per Prof. Brown (Nov 15), each interface function or route needs its own success and failure tests. Assignments 7 and 8 still show 0 / 2 on Brightspace with no feedback, so they are treated as not graded yet.",
+    "url": "https://github.com/EuardoGracidas/XR-JOE-Progress-Update-Reports/issues/8",
+    "number": 8,
+    "state": "OPEN",
+    "repo": "EuardoGracidas/XR-JOE-Progress-Update-Reports",
+    "assignees": [
+     {
+      "id": "U_kgDODkIbLQ",
+      "login": "EuardoGracidas",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/239213357?u=2efd6ace890e999f2b92520a71b8b7d64ce7aef9&v=4"
+     }
+    ],
+    "labels": [
+     {
+      "name": "Course",
+      "color": "f43d5d"
+     }
+    ],
+    "milestone": {
+     "id": "MI_kwDOVkaXns4BK6_C",
+     "number": 1,
+     "title": "Fall 2026 Semester",
+     "dueOn": "2026-12-18",
+     "state": "OPEN",
+     "url": "https://github.com/EuardoGracidas/XR-JOE-Progress-Update-Reports/milestone/1"
+    }
+   },
+   {
+    "sprint": null,
+    "id": "PVTI_lAHODkIbLc4BqYaozhJrfhw",
+    "updatedAt": "2026-11-18T01:42:59Z",
+    "statusId": "f75ad846",
+    "type": "Issue",
+    "contentId": "I_kwDOVkaXns8AAAABgOfsTA",
+    "title": "Fifth course (to be decided)",
+    "body": "**Goal:** Choose and complete the fifth course needed for the MSc.\n\n**Choose by:** November 30, 2026 (Winter 2027 registration)\n\n**Depends on:** #11\n",
+    "url": "https://github.com/EuardoGracidas/XR-JOE-Progress-Update-Reports/issues/10",
+    "number": 10,
+    "state": "OPEN",
+    "repo": "EuardoGracidas/XR-JOE-Progress-Update-Reports",
+    "assignees": [
+     {
+      "id": "U_kgDODkIbLQ",
+      "login": "EuardoGracidas",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/239213357?u=2efd6ace890e999f2b92520a71b8b7d64ce7aef9&v=4"
+     }
+    ],
+    "labels": [
+     {
+      "name": "Course",
+      "color": "f43d5d"
+     }
+    ],
+    "milestone": {
+     "id": "MI_kwDOVkaXns4BK6_O",
+     "number": 2,
+     "title": "Winter 2027 semester",
+     "dueOn": "2027-04-23",
+     "state": "OPEN",
+     "url": "https://github.com/EuardoGracidas/XR-JOE-Progress-Update-Reports/milestone/2"
+    }
+   },
+   {
+    "sprint": null,
+    "id": "PVTI_lAHODkIbLc4BqYaozhJrfTA",
+    "updatedAt": "2026-11-18T01:42:51Z",
+    "statusId": "f75ad846",
+    "type": "Issue",
+    "contentId": "I_kwDOVkaXns8AAAABgOffmQ",
+    "title": "COMP 690A/B (Research Methods in Computer Science)",
+    "body": "**Goal:** Complete COMP 690A/B, a required course for the MSc.\n\n**Semester:** Winter 2027",
+    "url": "https://github.com/EuardoGracidas/XR-JOE-Progress-Update-Reports/issues/9",
+    "number": 9,
+    "state": "OPEN",
+    "repo": "EuardoGracidas/XR-JOE-Progress-Update-Reports",
+    "assignees": [
+     {
+      "id": "U_kgDODkIbLQ",
+      "login": "EuardoGracidas",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/239213357?u=2efd6ace890e999f2b92520a71b8b7d64ce7aef9&v=4"
+     }
+    ],
+    "labels": [
+     {
+      "name": "Course",
+      "color": "f43d5d"
+     }
+    ],
+    "milestone": {
+     "id": "MI_kwDOVkaXns4BK6_O",
+     "number": 2,
+     "title": "Winter 2027 semester",
+     "dueOn": "2027-04-23",
+     "state": "OPEN",
+     "url": "https://github.com/EuardoGracidas/XR-JOE-Progress-Update-Reports/milestone/2"
+    }
+   },
+   {
+    "sprint": null,
+    "id": "PVTI_lAHODkIbLc4BqYaozhJrhWE",
+    "updatedAt": "2026-11-18T16:55:25Z",
+    "statusId": "98236657",
+    "type": "Issue",
+    "contentId": "I_kwDOVkaXns8AAAABgOhetw",
+    "title": "Choose the Winter 2027 course before registration (Nov 30)",
+    "body": "**Goal:** Decide with Oscar and Jay which course to take in Winter 2027 to complete the 5 required courses.\n\n**Deadline:** November 30, 2026, 12:00 p.m. (registration opens)\n\n**Done when:**\n- [ ] Course options listed\n- [ ] Course agreed with supervisors\n- [ ] Registered\n",
+    "url": "https://github.com/EuardoGracidas/XR-JOE-Progress-Update-Reports/issues/11",
+    "number": 11,
+    "state": "CLOSED",
+    "repo": "EuardoGracidas/XR-JOE-Progress-Update-Reports",
+    "assignees": [
+     {
+      "id": "MDQ6VXNlcjMyNTUzNjk4",
+      "login": "jayhendy",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/32553698?v=4"
+     },
+     {
+      "id": "MDQ6VXNlcjU2NDM5NTEx",
+      "login": "omerpas",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/56439511?v=4"
+     },
+     {
+      "id": "U_kgDODkIbLQ",
+      "login": "EuardoGracidas",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/239213357?u=2efd6ace890e999f2b92520a71b8b7d64ce7aef9&v=4"
+     }
+    ],
+    "labels": [
+     {
+      "name": "help wanted",
+      "color": "008672"
+     }
+    ],
+    "milestone": {
+     "id": "MI_kwDOVkaXns4BK6_C",
+     "number": 1,
+     "title": "Fall 2026 Semester",
+     "dueOn": "2026-12-18",
+     "state": "OPEN",
+     "url": "https://github.com/EuardoGracidas/XR-JOE-Progress-Update-Reports/milestone/1"
+    }
+   },
+   {
+    "sprint": null,
+    "id": "PVTI_lAHODkIbLc4BqYaozhJrLHs",
+    "updatedAt": "2026-11-18T01:43:35Z",
+    "statusId": "47fc9ee4",
+    "type": "Issue",
+    "contentId": "I_kwDOVkaXns8AAAABgOKyOg",
+    "title": "Complete the 5 required MSc courses",
+    "body": "**Goal:** Finish the 5 courses required for the MSc, including COMP 690A/B.\n\n**Deadline:** End of May 2027\n\n**Done when:** all sub-issues (#6, #7, #8, #9, #10) are closed.\n",
+    "url": "https://github.com/EuardoGracidas/XR-JOE-Progress-Update-Reports/issues/2",
+    "number": 2,
+    "state": "OPEN",
+    "repo": "EuardoGracidas/XR-JOE-Progress-Update-Reports",
+    "assignees": [
+     {
+      "id": "U_kgDODkIbLQ",
+      "login": "EuardoGracidas",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/239213357?u=2efd6ace890e999f2b92520a71b8b7d64ce7aef9&v=4"
+     }
+    ],
+    "labels": [],
+    "milestone": {
+     "id": "MI_kwDOVkaXns4BK6_O",
+     "number": 2,
+     "title": "Winter 2027 semester",
+     "dueOn": "2027-04-23",
+     "state": "OPEN",
+     "url": "https://github.com/EuardoGracidas/XR-JOE-Progress-Update-Reports/milestone/2"
+    }
+   },
+   {
+    "sprint": null,
+    "id": "PVTI_lAHODkIbLc4BqYaozhJrML8",
+    "updatedAt": "2026-11-18T02:18:48Z",
+    "statusId": "f75ad846",
+    "type": "Issue",
+    "contentId": "I_kwDOVkaXns8AAAABgOL37g",
+    "title": "Write the thesis proposal",
+    "body": "**Goal:** Have a complete, written thesis proposal.\n\n**Deadline:** End of June 2027\n\n**Done when:**\n- [ ] Outline agreed with supervisors\n- [ ] Full draft written\n- [ ] Draft reviewed by supervisors\n- [ ] Final version approved\n",
+    "url": "https://github.com/EuardoGracidas/XR-JOE-Progress-Update-Reports/issues/3",
+    "number": 3,
+    "state": "OPEN",
+    "repo": "EuardoGracidas/XR-JOE-Progress-Update-Reports",
+    "assignees": [
+     {
+      "id": "U_kgDODkIbLQ",
+      "login": "EuardoGracidas",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/239213357?u=2efd6ace890e999f2b92520a71b8b7d64ce7aef9&v=4"
+     }
+    ],
+    "labels": [
+     {
+      "name": "Thesis",
+      "color": "12c70e"
+     }
+    ],
+    "milestone": {
+     "id": "MI_kwDOVkaXns4BK6_O",
+     "number": 2,
+     "title": "Winter 2027 semester",
+     "dueOn": "2027-04-23",
+     "state": "OPEN",
+     "url": "https://github.com/EuardoGracidas/XR-JOE-Progress-Update-Reports/milestone/2"
+    }
+   },
+   {
+    "sprint": null,
+    "id": "PVTI_lAHODkIbLc4BqYaozhJrMvs",
+    "updatedAt": "2026-11-18T01:44:22Z",
+    "statusId": "61e4505c",
+    "type": "Issue",
+    "contentId": "I_kwDOVkaXns8AAAABgOMXtg",
+    "title": "Connect the phone app and server for the 2FA experiment",
+    "body": "**Goal:** Complete the 2FA experimental setup so participants can enter codes on their smartphone while wearing the Meta Quest 3.\n\n**Done when:**\n- [ ] Phone app connects to the server app\n- [ ] Codes entered on the phone reach the server\n- [ ] Full flow tested while wearing the MQ3\n",
+    "url": "https://github.com/EuardoGracidas/XR-JOE-Progress-Update-Reports/issues/4",
+    "number": 4,
+    "state": "OPEN",
+    "repo": "EuardoGracidas/XR-JOE-Progress-Update-Reports",
+    "assignees": [
+     {
+      "id": "U_kgDODkIbLQ",
+      "login": "EuardoGracidas",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/239213357?u=2efd6ace890e999f2b92520a71b8b7d64ce7aef9&v=4"
+     }
+    ],
+    "labels": [
+     {
+      "name": "2FA",
+      "color": "2740f5"
+     }
+    ],
+    "milestone": {
+     "id": "MI_kwDOVkaXns4BK6_C",
+     "number": 1,
+     "title": "Fall 2026 Semester",
+     "dueOn": "2026-12-18",
+     "state": "OPEN",
+     "url": "https://github.com/EuardoGracidas/XR-JOE-Progress-Update-Reports/milestone/1"
+    }
+   },
+   {
+    "sprint": null,
+    "id": "PVTI_lAHODkIbLc4BqYaozhJrNU4",
+    "updatedAt": "2026-11-18T17:05:20Z",
+    "statusId": "61e4505c",
+    "type": "Issue",
+    "contentId": "I_kwDOVkaXns8AAAABgOM5vQ",
+    "title": "2FA: Run and study Peter's phone-tracking system",
+    "body": "**Goal:** Get Peter's system running and understand how it works, especially the passthrough that lets the user see the smartphone in the headset.\n\n**Done when:**\n- [ ] System runs on the MQ3\n- [ ] Notes on how phone tracking is implemented\n- [ ] Notes on how the passthrough is implemented\n",
+    "url": "https://github.com/EuardoGracidas/XR-JOE-Progress-Update-Reports/issues/5",
+    "number": 5,
+    "state": "OPEN",
+    "repo": "EuardoGracidas/XR-JOE-Progress-Update-Reports",
+    "assignees": [
+     {
+      "id": "U_kgDODkIbLQ",
+      "login": "EuardoGracidas",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/239213357?u=2efd6ace890e999f2b92520a71b8b7d64ce7aef9&v=4"
+     }
+    ],
+    "labels": [
+     {
+      "name": "2FA",
+      "color": "2740f5"
+     }
+    ],
+    "milestone": {
+     "id": "MI_kwDOVkaXns4BK6_C",
+     "number": 1,
+     "title": "Fall 2026 Semester",
+     "dueOn": "2026-12-18",
+     "state": "OPEN",
+     "url": "https://github.com/EuardoGracidas/XR-JOE-Progress-Update-Reports/milestone/1"
+    }
+   },
+   {
+    "sprint": null,
+    "id": "PVTI_lAHODkIbLc4BqYaozhJrRPc",
+    "updatedAt": "2026-11-18T01:43:15Z",
+    "statusId": "47fc9ee4",
+    "type": "Issue",
+    "contentId": "I_kwDOVkaXns8AAAABgOQpFg",
+    "title": "COMP-6934-001 (Intro to Data Visualization)",
+    "body": "## Course Overview\n- **Instructor:** Prof. Karteek Popuri\n\n## Current Status (Nov 17, 2026)\nAll graded work to date completed with high marks. Main focus now is the **group course project (Team 6)**.\n\nWeights:\n\n| Item | Score |\n|------|-------|\n|Quizzes | 10% |\n|Assignments | 30% |\n|Project | 30% |\n|Final Exam | 30% |\n\n### Completed\n- [x] Lectures 1–11: Matplotlib (functional vs OO API), line/scatter/bar, data types & tidy data, customizations, Seaborn, distributions (histogram, box, violin), hierarchical plots (pie, donut, sunburst, treemap, waffle, Venn, dendrogram), design process (Andy Kirk), flow plots (Sankey, chord), radial designs (radar, polar/coxcomb)\n- [x] Quizzes 1–8: full marks on all\n- [x] Assignment 1: 10/10\n- [x] Assignment 2: 10/10\n- [x] Assignment 3  9/10\n- [x] Assignment 4: 10/10\n- [ ] Assignment 5: In progress\n- [ ] Assignment 6: To be done\n\n### Grades summary\n| Quizzes | Assignments | Project | Final Exam |\n|------|-------|------|-------|\n| 8/10 | 6.5 /10 | In progress | To be done |\n\n## In Progress: Course Project — Team 6\n**Team:** Eduardo Gracidas, Joao Secundo, Abdullahi Abdulkabir\n**Dataset:** Spotify songs\n**Deliverables:** Python notebook + final report in LaTeX\n\n- [x] Project proposal approved by Prof. Popuri (Nov 2026)\n- [ ] Final visualizations (notebook, reproducible top-to-bottom)\n- [ ] Final report (LaTeX): design decisions + attribution section\n\n## Next\n- [ ] Remaining weekly quizzes\n- [ ] Project submission\n- [ ] In-class final exam (November 7)\n\n## Notes\nAssignments are group submissions (single ZIP via Brightspace: notebook + report). Code must run with pinned library versions (matplotlib, pandas, seaborn, numpy only).",
+    "url": "https://github.com/EuardoGracidas/XR-JOE-Progress-Update-Reports/issues/6",
+    "number": 6,
+    "state": "OPEN",
+    "repo": "EuardoGracidas/XR-JOE-Progress-Update-Reports",
+    "assignees": [
+     {
+      "id": "U_kgDODkIbLQ",
+      "login": "EuardoGracidas",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/239213357?u=2efd6ace890e999f2b92520a71b8b7d64ce7aef9&v=4"
+     }
+    ],
+    "labels": [
+     {
+      "name": "Course",
+      "color": "f43d5d"
+     }
+    ],
+    "milestone": {
+     "id": "MI_kwDOVkaXns4BK6_C",
+     "number": 1,
+     "title": "Fall 2026 Semester",
+     "dueOn": "2026-12-18",
+     "state": "OPEN",
+     "url": "https://github.com/EuardoGracidas/XR-JOE-Progress-Update-Reports/milestone/1"
+    }
+   },
+   {
+    "sprint": null,
+    "id": "PVTI_lAHODkIbLc4BqYaozhJrY0k",
+    "updatedAt": "2026-11-18T01:43:18Z",
+    "statusId": "47fc9ee4",
+    "type": "Issue",
+    "contentId": "I_kwDOVkaXns8AAAABgOZSow",
+    "title": "COMP-6901-001 (Applied Algorithms)",
+    "body": "## Course Overview\n- **Instructor:** Prof. H. Todd Wareham\n\n## Current Status (Week 11 — Nov 17, 2026)\nCurrently covering **Polynomial-Time Intractability**: reductions, P / NP / EXPTIME, NP-hardness and NP-completeness.\n\n### Completed\n- [x] Lectures 1–16 (time complexity, CST/backtracking, D&C, DP, greedy, MST, BFS/DFS, shortest paths, reductions)\n- [x] In-class Exam 1 — Oct 1 (got 76/100) \n- [x] In-class Exam 2 — Nov 5 (got 86/100)\n\n## Upcoming: In-class Exam 3 — Thursday, Nov 26\n**Format:** closed-book, on paper, 75 min, 50 marks\n**Scope:** Lectures 9–16 (Topics 5–7)\n\n| Question | Topic | Parts | Marks |\n|----------|-------|-------|-------|\n| 1 | Greedy / Graph Algorithms (Topics 5–6) | 3 | 30 |\n| 2 | Polynomial-Time Intractability (Topic 7) | 3 | 20 |\n\n### Study checklist\n- [ ] Greedy: Activity Selection, Fractional vs 0/1 Knapsack, Greedy cookbook\n- [ ] MST: Kruskal and Prim (traces + running time vs. data structures)\n- [ ] Graph traversal: BFS (d, π) and DFS (d/f times, edge classification)\n- [ ] Shortest paths: Relax, Dijkstra, Bellman-Ford, Floyd-Warshall\n- [ ] Reductions: properties, reduction webs, decision vs cost vs example versions\n- [ ] Many-one reductions: Clique → VC, SS → 0/1 KN, VC → STG\n- [ ] Classes P, NP, EXPTIME; C-hard / C-complete\n- [ ] Review Potential Exam Questions (Topics 5–7)\n- [ ] Solve practice exam simulations\n\n## Next\n- [ ] Lecture 17 (Nov 19): Cook/Karp, SAT → 3-CNF SAT, NP-hardness proofs\n- [ ] Lecture 18 (Nov 24): Dealing with intractability (parallel, randomized, quantum, heuristics)\n- [ ] Final exam prep: Prim's and DFS expected (not Kruskal/BFS, subject to change)\n\n## Notes\nThe course diary is updated every lecture, so re-check the exam scope before each exam.",
+    "url": "https://github.com/EuardoGracidas/XR-JOE-Progress-Update-Reports/issues/7",
+    "number": 7,
+    "state": "OPEN",
+    "repo": "EuardoGracidas/XR-JOE-Progress-Update-Reports",
+    "assignees": [
+     {
+      "id": "U_kgDODkIbLQ",
+      "login": "EuardoGracidas",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/239213357?u=2efd6ace890e999f2b92520a71b8b7d64ce7aef9&v=4"
+     }
+    ],
+    "labels": [
+     {
+      "name": "Course",
+      "color": "f43d5d"
+     }
+    ],
+    "milestone": {
+     "id": "MI_kwDOVkaXns4BK6_C",
+     "number": 1,
+     "title": "Fall 2026 Semester",
+     "dueOn": "2026-12-18",
+     "state": "OPEN",
+     "url": "https://github.com/EuardoGracidas/XR-JOE-Progress-Update-Reports/milestone/1"
+    }
+   }
+  ]
+ },
+ "meetings": [
+  {
+   "name": "2026-11-18.md",
+   "path": "meetings/2026-11-18.md",
+   "sha": "c8df28bf7bf88058ded08a9eb88b14bd283a9e9b",
+   "htmlUrl": "https://github.com/EuardoGracidas/XR-JOE-Progress-Update-Reports/blob/main/meetings/2026-11-18.md",
+   "text": "# Meeting 2026-11-18\n\n**Attendees:** Oscar, Jay, Eduardo\n\n## Agenda\n- Discuss 2FA project deadlines and responsibilities.\n- Review Eduardo's progress so far.\n\n## Discussion\n- **2FA project deadlines and responsibilities:** Eduardo will take over the 2FA project. First, he will replicate Peter's current setup. Then he will fix the communication/connection between the Meta Quest 3 and Peter's phone app. Jay will share a communication protocol from a previous project to help with the fix. The group also set target dates for the connection work and the user study, and discussed the ethics requirements (TCPS 2 certificate and whether the existing ethics protocol can be reused).\n- **Eduardo's progress so far:** _[Add a brief summary of what you presented and any feedback received.]_\n\n## Decisions\n- Eduardo will replicate what Peter has done.\n- Eduardo will fix the communication/connection between the Meta Quest 3 and Peter's phone app.\n- Suggested deadline for the connection: middle of the Winter 2027 semester.\n- Suggested deadline for the user study: end of the Winter 2027 semester.\n- The 2FA project will count as Eduardo's project for Jay's course.\n- Eduardo will complete the TCPS 2: CORE-2022 certificate by the beginning of the Winter 2027 semester.\n- It needs to be checked whether the ethics protocol has to be updated or whether the one from the previous 2FA iteration can be reused.\n- Jay will send Eduardo a communication protocol from a previous project to help with the fix.\n\n## Action items\n- [ ] Send the communication protocol from the previous project to Eduardo — Jay — TBD\n- [ ] Replicate Peter's current 2FA setup — Eduardo — TBD\n- [ ] Fix the Meta Quest 3 ↔ phone app connection — Eduardo — Middle of Winter 2027\n- [ ] Complete the TCPS 2: CORE-2022 certificate — Eduardo — Beginning of Winter 2027 (January 2027)\n- [ ] Find out whether the ethics protocol needs updating or can be reused from the previous 2FA iteration — Eduardo / Oscar — TBD\n- [ ] Run the user study — Eduardo — End of Winter 2027\n\n## Next meeting\n- Date: Wednesday, November 25, 2026\n- Topics to bring:\n  - Progress on replicating Peter's setup (what works, what's blocking).\n  - First look at Jay's communication protocol and how it applies to the Quest 3 - phone connection.\n  - Update on the ethics protocol question.\n  - TCPS 2 certificate progress.\n  - Draft timeline from now to the user study.\n"
+  }
+ ]
+}
