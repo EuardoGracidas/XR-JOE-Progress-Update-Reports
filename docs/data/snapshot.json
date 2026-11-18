@@ -1,5 +1,5 @@
 {
- "updatedAt": "2026-11-18T21:59:57.190Z",
+ "updatedAt": "2026-11-18T22:01:48.550Z",
  "project": {
   "id": "PVT_kwHODkIbLc4BqYao",
   "number": 3,
@@ -87,12 +87,12 @@
    {
     "sprint": null,
     "id": "PVTI_lAHODkIbLc4BqYaozhJrfhw",
-    "updatedAt": "2026-11-18T21:59:47Z",
+    "updatedAt": "2026-11-18T22:01:39Z",
     "statusId": "f75ad846",
     "type": "Issue",
     "contentId": "I_kwDOVkaXns8AAAABgOfsTA",
     "title": "Fifth course (lecture with Jay)",
-    "body": "### Before November 18th meeting\n\n**Goal:** Choose and complete the fifth course needed for the MSc.\n\n**Choose by:** November 30, 2026 (Winter 2027 registration)\n\n**Depends on:** #11\n\n### Decided on [November 18th meeting](meetings/2026-11-18.md)\n\n- **Decision**: This has to be Jay's course for the upcoming Winter 2027 semester.\n- **Project**: The project for this course will be about 2FA.\n- **Requirements**: Do the TCPS 2: CORE-2022 certificate and be up to day with Peter's implementation.",
+    "body": "### Before November 18th meeting\n\n**Goal:** Choose and complete the fifth course needed for the MSc.\n\n**Choose by:** November 30, 2026 (Winter 2027 registration)\n\n**Depends on:** #11\n\n### Decided on [November 18th meeting](https://github.com/EuardoGracidas/XR-JOE-Progress-Update-Reports/blob/main/meetings/2026-11-18.md)\n\n- **Decision**: This has to be Jay's course for the upcoming Winter 2027 semester.\n- **Project**: The project for this course will be about 2FA.\n- **Requirements**: Do the TCPS 2: CORE-2022 certificate and be up to day with Peter's implementation.",
     "url": "https://github.com/EuardoGracidas/XR-JOE-Progress-Update-Reports/issues/10",
     "number": 10,
     "state": "OPEN",
