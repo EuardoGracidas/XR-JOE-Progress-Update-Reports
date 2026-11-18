@@ -1,5 +1,5 @@
 {
- "updatedAt": "2026-11-18T21:47:11.765Z",
+ "updatedAt": "2026-11-18T21:48:44.779Z",
  "project": {
   "id": "PVT_kwHODkIbLc4BqYao",
   "number": 3,
@@ -372,12 +372,12 @@
    {
     "sprint": null,
     "id": "PVTI_lAHODkIbLc4BqYaozhJrY0k",
-    "updatedAt": "2026-11-18T01:43:18Z",
+    "updatedAt": "2026-11-18T21:48:33Z",
     "statusId": "47fc9ee4",
     "type": "Issue",
     "contentId": "I_kwDOVkaXns8AAAABgOZSow",
     "title": "COMP-6901-001 (Applied Algorithms)",
-    "body": "## Course Overview\n- **Instructor:** Prof. H. Todd Wareham\n\n## Current Status (Week 11 — Nov 17, 2026)\nCurrently covering **Polynomial-Time Intractability**: reductions, P / NP / EXPTIME, NP-hardness and NP-completeness.\n\n### Completed\n- [x] Lectures 1–16 (time complexity, CST/backtracking, D&C, DP, greedy, MST, BFS/DFS, shortest paths, reductions)\n- [x] In-class Exam 1 — Oct 1 (got 76/100) \n- [x] In-class Exam 2 — Nov 5 (got 86/100)\n\n## Upcoming: In-class Exam 3 — Thursday, Nov 26\n**Format:** closed-book, on paper, 75 min, 50 marks\n**Scope:** Lectures 9–16 (Topics 5–7)\n\n| Question | Topic | Parts | Marks |\n|----------|-------|-------|-------|\n| 1 | Greedy / Graph Algorithms (Topics 5–6) | 3 | 30 |\n| 2 | Polynomial-Time Intractability (Topic 7) | 3 | 20 |\n\n### Study checklist\n- [ ] Greedy: Activity Selection, Fractional vs 0/1 Knapsack, Greedy cookbook\n- [ ] MST: Kruskal and Prim (traces + running time vs. data structures)\n- [ ] Graph traversal: BFS (d, π) and DFS (d/f times, edge classification)\n- [ ] Shortest paths: Relax, Dijkstra, Bellman-Ford, Floyd-Warshall\n- [ ] Reductions: properties, reduction webs, decision vs cost vs example versions\n- [ ] Many-one reductions: Clique → VC, SS → 0/1 KN, VC → STG\n- [ ] Classes P, NP, EXPTIME; C-hard / C-complete\n- [ ] Review Potential Exam Questions (Topics 5–7)\n- [ ] Solve practice exam simulations\n\n## Next\n- [ ] Lecture 17 (Nov 19): Cook/Karp, SAT → 3-CNF SAT, NP-hardness proofs\n- [ ] Lecture 18 (Nov 24): Dealing with intractability (parallel, randomized, quantum, heuristics)\n- [ ] Final exam prep: Prim's and DFS expected (not Kruskal/BFS, subject to change)\n\n## Notes\nThe course diary is updated every lecture, so re-check the exam scope before each exam.",
+    "body": "## Course Overview\n- **Instructor:** Prof. H. Todd Wareham\n\n## Current Status (Week 11 — Nov 17, 2026)\nCurrently covering **Polynomial-Time Intractability**: reductions, P / NP / EXPTIME, NP-hardness and NP-completeness.\n\n### Completed\n- [x] Lectures 1–16 (time complexity, CST/backtracking, D&C, DP, greedy, MST, BFS/DFS, shortest paths, reductions)\n- [x] In-class Exam 1 — Oct 1 (got 76/100) \n- [x] In-class Exam 2 — Nov 5 (got 86/100)\n\n## Upcoming: In-class Exam 3 — Thursday, Nov 26\n**Format:** closed-book, on paper, 75 min, 50 marks\n**Scope:** Lectures 9–16 (Topics 5–7)\n\n| Question | Topic | Parts | Marks |\n|----------|-------|-------|-------|\n| 1 | Greedy / Graph Algorithms (Topics 5–6) | 3 | 30 |\n| 2 | Polynomial-Time Intractability (Topic 7) | 3 | 20 |\n\n## Next\n- [ ] Lecture 17 (Nov 19): Cook/Karp, SAT → 3-CNF SAT, NP-hardness proofs\n- [ ] Lecture 18 (Nov 24): Dealing with intractability (parallel, randomized, quantum, heuristics)\n- [ ] Final exam prep: Prim's and DFS expected (not Kruskal/BFS, subject to change)\n\n## Notes\nThe course diary is updated every lecture, so re-check the exam scope before each exam.",
     "url": "https://github.com/EuardoGracidas/XR-JOE-Progress-Update-Reports/issues/7",
     "number": 7,
     "state": "OPEN",
