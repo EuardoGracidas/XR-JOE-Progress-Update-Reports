@@ -1,5 +1,5 @@
 {
- "updatedAt": "2026-11-18T22:01:48.550Z",
+ "updatedAt": "2026-11-18T22:32:53.413Z",
  "project": {
   "id": "PVT_kwHODkIbLc4BqYao",
   "number": 3,
@@ -87,7 +87,7 @@
    {
     "sprint": null,
     "id": "PVTI_lAHODkIbLc4BqYaozhJrfhw",
-    "updatedAt": "2026-11-18T22:01:39Z",
+    "updatedAt": "2026-11-18T22:32:42Z",
     "statusId": "f75ad846",
     "type": "Issue",
     "contentId": "I_kwDOVkaXns8AAAABgOfsTA",
@@ -98,6 +98,11 @@
     "state": "OPEN",
     "repo": "EuardoGracidas/XR-JOE-Progress-Update-Reports",
     "assignees": [
+     {
+      "id": "MDQ6VXNlcjMyNTUzNjk4",
+      "login": "jayhendy",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/32553698?v=4"
+     },
      {
       "id": "U_kgDODkIbLQ",
       "login": "EuardoGracidas",
